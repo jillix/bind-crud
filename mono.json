@@ -1,0 +1,14 @@
+{
+    "source": "github",
+    "owner": "jillix",
+    "name": "bind-crud",
+    "dependencies": [
+        "/client.js"
+    ],
+    "operations": [
+        { "file": "operations.js", "function": "find" },
+        { "file": "operations.js", "function": "remove" },
+        { "file": "operations.js", "function": "update" },
+        { "file": "operations.js", "function": "insert" }
+    ]
+}
