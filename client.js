@@ -4,17 +4,19 @@ function init (config) {
     
     var self = this;
     
-    methods = config.methods || methods;
-    
     // add events
-    for (var i = 0, l = methods.length; i < l; ++i) {
-        self.on(methods[i], (function (method) {
-            return function (query, callback) {
-                if (query && !(query instanceof Array) && typeof query === 'object') {
-                    self.link(method, {data: query}, callback);
-                }
+    if (config.listen instanceof Array) {
+        for (var i = 0, l = config.listen.length; i < l; ++i) {
+            for (var ii = 0, ll = methods.length; ii < ll; ++ii) {
+                self.on(methods[ii], config.listen[i], (function (method) {
+                    return function (query, callback) {
+                        if (query && !(query instanceof Array) && typeof query === 'object') {
+                            self.link(method, {data: query}, callback);
+                        }
+                    }
+                })(methods[ii]));
             }
-        })(methods[i]));
+        }
     }
 }
 
