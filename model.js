@@ -89,12 +89,13 @@ function getType (request, callback) {
         }, function (err, type) {
             
             if (err) {
+                err.statusCode = 500;
                 return callback(err);
             }
             
             if (!type) {
-                var err = new Error('No type found.');
-                err.statusCode = 404;
+                var err = new Error('Forbidden.');
+                err.statusCode = 403;
                 return callback(err);
             }
             
