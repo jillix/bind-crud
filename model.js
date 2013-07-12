@@ -43,19 +43,21 @@ var types = {
 function createRequest (link) {
     
     var data = link.data || {};
+    
+    // type is mandatory
+    if (!data.t) {
+        return;
+    }
+    
     var request = {
         role: link.session._rid,
         options: {},
-        typeName: data.q && data.q._tp ? data.q._tp : data.d && data.d._tp ? data.d._tp : null
+        typeName: data.t
     };
-    
-    // type is mandatory
-    if (typeof request.typeName !== 'string') {
-        return;
-    }
 
     // query
     request.query = data.q || {};
+    request.query._tp = data.t;
     
     // update
     if (data.d && data.d.constructor.name === 'Object') {
