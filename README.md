@@ -12,8 +12,8 @@ listen: ["MIID1", "MIID2", ...]
 This CRUD module will listen for `find`, `update`, `insert`, and `remove` events comming from these modules
 and forward their requests to the server. All these events must have two parameters:
 
- * the CRUD object defined by the CRUD module. See example below.
- * the callback to be called with the results when the operation complete
+ * the **CRUD object** defined by the CRUD module. See **example below**.
+ * the **callback** to be called with the results when the operation completes.
 
 ####Example request data:
 ```js
