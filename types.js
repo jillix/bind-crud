@@ -5,26 +5,28 @@ var modm = require('modm');
 var config = {
     dbName: 'dms',
     templateTypeName: 'template',
-    templateColName: 'items'
+    templateColName: 'items',
+    templateSchema: {
+        _tp: {type: String, required: true},
+        id: {type: String, required: true},
+        _ln: [{
+            _tp: {type: String},
+            id: {type: String}
+        }],
+        db: {type: String, required: true},
+        collection: {type: String, required: true},
+        roles: {type: Object, required: true},
+        schema: {type: Object, required: true}
+    }
 };
 
+// connect to db
+// TODO implement the datasource concept
 var model = modm(config.dbName, {
     server: {pooSize: 3},
     db: {w: 1}
 });
-
-var templateSchema = new modm.Schema({
-    _tp: {type: String, required: true},
-    id: {type: String, required: true},
-    _ln: [{
-        _tp: {type: String},
-        id: {type: String}
-    }],
-    db: {type: String, required: true},
-    collection: {type: String, required: true},
-    roles: {type: Object, required: true},
-    schema: {type: Object, required: true}
-});
+var templateSchema = new modm.Schema(config.templateSchema);
 
 // type cache
 var typeCache = {
@@ -40,6 +42,20 @@ var typeCache = {
     }
 };
 
+function checkAccess (type, role, access) {
+    if (type.roles[role] < access) {
+        return false;
+    }
+    return true;
+}
+
+function initAndCache (type) {
+    type.model = model;
+    type.schema = new modm.Schema(type.schema);
+    type.collection = model(type.collection, type.schema);
+    return typeCache[type.id] = type;
+}
+
 function fetchTypeFromDb (types, role, fields, callback) {
     
     // build query
@@ -49,7 +65,7 @@ function fetchTypeFromDb (types, role, fields, callback) {
             id: types.length > 1 ? {$in: []} : '',
             roles: {}
         },
-        options: {limit: 1, fields: fields || {}},
+        options: {limit: types.length, fields: fields || {}},
         type: typeCache.template
     };
     
@@ -70,33 +86,59 @@ function fetchTypeFromDb (types, role, fields, callback) {
         dbReq.query.id = types[0];
     }
     
-    io.find(null, dbReq, callback);
+    io.find(null, dbReq, function (err, cursor) {
+        
+        if (err) {
+            err.statusCode = 500;
+            return callback(err);
+        }
+        
+        if (!cursor) {
+            var err = new Error('Types not found.');
+            err.statusCode = 404;
+            return callback(err);
+        }
+        
+        cursor.toArray(function (err, types) {
+                
+            if (err) {
+                err.statusCode = 500;
+                return callback(err);
+            }
+            
+            if (!types || types.length === 1) {
+                var err = new Error('Types not found.');
+                err.statusCode = 404;
+                return callback(err);
+            }
+            
+            callback(null, types);
+        });
+    });
 }
 
 function getType (request, callback) {
 
     if (!typeCache[request.typeName]) {
         return fetchTypeFromDb([request.typeName], request.role, {_id: 0}, function (err, type) {
-                
+            
             if (err) {
                 err.statusCode = err.statusCode || 500;
                 return callback(err);
             }
             
-            if (!type) {
-                var err = new Error('Type not found.');
-                err.statusCode = 404;
-                return callback(err);
-            }
+            type = type[0];
             
-            type.model = model;
-            type.schema = new modm.Schema(type.schema);
-            type.collection = model(type.collection, type.schema);
-            
-            // cache type
-            request.type = types[request.typeName] = type;
+            request.type = initAndCache(type);
             callback(null, request);
         });
+    }
+    
+    // check access
+    if (!checkAccess(typeCache[request.typeName], request.role, 1)) {
+        var err = new Error('Types not found.');
+        err.statusCode = 404;
+        return callback(err);
     }
     
     request.type = typeCache[request.typeName];
@@ -116,7 +158,8 @@ function getTypes (link) {
     
     // check cahed types
     for (var i = 0, l = types.length; i < l; ++i) {
-        if (typeCache[types[i]]) {
+        // add to result if role has access
+        if (typeCache[types[i]] && checkAccess(typeCache[types[i]], link.session._rid, 1)) {
             cachedTypes.push(typeCache[types[i]].schema.paths);
         } else {
             queryTypes.push(typeCache[types[i]]);
@@ -124,33 +167,26 @@ function getTypes (link) {
     }
     
     if (queryTypes.length > 0) {
-        return fetchTypeFromDb(queryTypes, link.session._rid, {_id: 0, 'schema.paths': 1}, function (err, cursor) {
+        return fetchTypeFromDb(queryTypes, link.session._rid, {_id: 0}, function (err, types) {
             
             if (err) {
                 return link.send(err.statusCode || 500, err.message);
             }
             
-            if (!cursor) {
+            for (var i = 0, l = types.length; i < l; ++i) {
+                cachedTypes.push(initAndCache(type).schema.paths);
+            }
+            
+            if (cachedTypes.length === 0) {
                 return link.send(404, 'Types not found.');
             }
             
-            cursor.toArray(function (err, types) {
-                
-                if (err) {
-                    return link.send(500, err.message);
-                }
-                
-                if (!types) {
-                    return link.send(404, 'Types not found.');
-                }
-                
-                for (var i = 0, l = types.length; i < l; ++i) {
-                    cachedTypes.push(types[i].schema.paths);
-                }
-                
-                link.send(200, cachedTypes);
-            });
+            link.send(200, cachedTypes);
         });
+    }
+    
+    if (cachedTypes.length === 0) {
+        return link.send(404, 'Types not found.');
     }
     
     link.send(200, cachedTypes);
