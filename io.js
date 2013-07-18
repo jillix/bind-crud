@@ -79,4 +79,3 @@ exports.remove = function (link, dbReq, callback) {
         response(link, err, numOfRmDocs, callback);
     });
 };
-

@@ -1,4 +1,5 @@
 var model = require('./model');
+var types = require('./types');
 
 exports.find = function (link) {
     model('find', link);
@@ -16,6 +17,6 @@ exports.insert = function (link) {
     model('insert', link);
 };
 
-exports.getType = function (link) {
-    link.send(501, 'Not (yet) implemented');
+exports.getTypes = function (link) {
+    types.getTypes(link);
 }
