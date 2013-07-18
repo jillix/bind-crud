@@ -148,7 +148,7 @@ function getType (request, callback) {
 function getTypes (link) {
     
     var types = link.data;
-    var cachedTypes = [];
+    var cachedTypes = {};
     var queryTypes = [];
     var addedTypes = {};
     
@@ -159,39 +159,28 @@ function getTypes (link) {
     
     // check cahed types
     for (var i = 0, l = types.length; i < l; ++i) {
-        if (!addedTypes[types[i]]) {
+        // add to result if role has access
+        if (typeCache[types[i]] && checkAccess(typeCache[types[i]], link.session._rid, 1)) {
+            cachedTypes[types[i]] = typeCache[types[i]].schema.paths;
+        } else if (!addedTypes[types[i]]) {
             addedTypes[types[i]] = true;
-            
-            // add to result if role has access
-            if (typeCache[types[i]] && checkAccess(typeCache[types[i]], link.session._rid, 1)) {
-                cachedTypes.push(typeCache[types[i]].schema.paths);
-            } else {
-                queryTypes.push(types[i]);
-            }
+            queryTypes.push(types[i]);
         }
     }
     
     if (queryTypes.length > 0) {
-        return fetchTypeFromDb(queryTypes, link.session._rid, {_id: 0}, function (err, types) {
+        return fetchTypeFromDb(queryTypes, link.session._rid, {_id: 0, id: 1}, function (err, types) {
             
             if (err) {
                 return link.send(err.statusCode || 500, err.message);
             }
             
             for (var i = 0, l = types.length; i < l; ++i) {
-                cachedTypes.push(initAndCache(type).schema.paths);
-            }
-            
-            if (cachedTypes.length === 0) {
-                return link.send(404, 'Types not found.');
+                cachedTypes[types[i].id] = initAndCache(types[i]).schema.paths;
             }
             
             link.send(200, cachedTypes);
         });
-    }
-    
-    if (cachedTypes.length === 0) {
-        return link.send(404, 'Types not found.');
     }
     
     link.send(200, cachedTypes);
