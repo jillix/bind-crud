@@ -18,7 +18,7 @@ function init (config) {
                                 return callback('Invalid type.');
                             }
                             
-                            self.link(method + '/' + type);
+                            self.link(method + '/' + type, callback);
                         };
                     }
                     
