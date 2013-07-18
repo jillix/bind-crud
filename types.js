@@ -106,7 +106,7 @@ function fetchTypeFromDb (types, role, fields, callback) {
                 return callback(err);
             }
             
-            if (!types || types.length === 1) {
+            if (!types || types.length === 0) {
                 var err = new Error('Types not found.');
                 err.statusCode = 404;
                 return callback(err);
@@ -147,9 +147,10 @@ function getType (request, callback) {
 
 function getTypes (link) {
     
-    var types = link.path;
+    var types = link.data;
     var cachedTypes = [];
     var queryTypes = [];
+    var addedTypes = {};
     
     // check types
     if (!types || types.length < 1) {
@@ -158,11 +159,15 @@ function getTypes (link) {
     
     // check cahed types
     for (var i = 0, l = types.length; i < l; ++i) {
-        // add to result if role has access
-        if (typeCache[types[i]] && checkAccess(typeCache[types[i]], link.session._rid, 1)) {
-            cachedTypes.push(typeCache[types[i]].schema.paths);
-        } else {
-            queryTypes.push(typeCache[types[i]]);
+        if (!addedTypes[types[i]]) {
+            addedTypes[types[i]] = true;
+            
+            // add to result if role has access
+            if (typeCache[types[i]] && checkAccess(typeCache[types[i]], link.session._rid, 1)) {
+                cachedTypes.push(typeCache[types[i]].schema.paths);
+            } else {
+                queryTypes.push(types[i]);
+            }
         }
     }
     
