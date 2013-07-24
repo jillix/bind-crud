@@ -20,12 +20,6 @@ var config = {
     }
 };
 
-// connect to db
-// TODO implement the datasource concept
-var model = modm(config.dbName, {
-    server: {pooSize: 3},
-    db: {w: 1}
-});
 var templateSchema = new modm.Schema(config.templateSchema);
 
 // template cache
@@ -37,22 +31,34 @@ var templateCache = {
         collection: config.templateColName,
         roles: {3: 1}, // 0 = no access, 1 = read, 2 = write
         schema: templateSchema,
-        model: model,
-        collection: model(config.templateColName, templateSchema)
+        model: modm(config.dbName, {
+            server: {pooSize: 3},
+            db: {w: 1}
+        })
     }
 };
+// init collection
+templateCache.template.collection = templateCache.template.model(config.templateColName, templateSchema);
 
+//TODO check access
 function checkAccess (template, role, access) {
-    if (template.roles[role] < access) {
+    /*if (template.roles[role] < access) {
         return false;
-    }
+    }*/
     return true;
 }
 
 function initAndCache (template) {
-    template.model = model;
+    if (typeof template.db !== 'string') {
+        return;
+    };
+    
+    template.model = modm(template.db, {
+        server: {pooSize: 3},
+        db: {w: 1}
+    });
     template.schema = new modm.Schema(template.schema);
-    template.collection = model(template.collection, template.schema);
+    template.collection = template.model(template.collection, template.schema);
     return templateCache[template.id] = template;
 }
 
@@ -130,6 +136,13 @@ function getTemplate (request, callback) {
             
             template = template[0];
             request.template = initAndCache(template);
+            
+            if (!request.template) {
+                err = new Error('Bad template object.');
+                err.statusCode = 500;
+                return callback(err);
+            }
+            
             callback(null, request);
         });
     }
@@ -157,7 +170,7 @@ function getTemplates (link) {
         return link.send(400, 'No templates given.');
     }
     
-    // check cahed templates
+    // check cached templates
     for (var i = 0, l = templates.length; i < l; ++i) {
         // add to result if role has access
         if (templateCache[templates[i]] && checkAccess(templateCache[templates[i]], link.session._rid, 1)) {
@@ -176,7 +189,10 @@ function getTemplates (link) {
             }
             
             for (var i = 0, l = templates.length; i < l; ++i) {
-                cachedTemplates[templates[i]._id] = initAndCache(templates[i]).schema.paths;
+                cachedTemplates[templates[i]._id] = initAndCache(templates[i]);
+                if (cachedTemplates[templates[i]._id]) {
+                    cachedTemplates[templates[i]._id] = cachedTemplates[templates[i]._id].schema.paths
+                }
             }
             
             link.send(200, cachedTemplates);
