@@ -52,7 +52,7 @@ module.exports = function (method, link) {
     }
     
     // get template (cache)
-    template.getTemplate(request, function (err, request) {
+    templates.getTemplate(request, function (err, request) {
         
         if (err) {
             return link.send(err.statusCode || 500, err.message);

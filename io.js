@@ -56,26 +56,26 @@ function response (link, err, result, callback) {
 
 // read
 exports.find = function (link, dbReq, callback) {
-    dbReq.type.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
+    dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
         response(link, err, cursor, callback);
     });
 };
 
 // write
 exports.update = function (link, dbReq, callback) {
-    dbReq.type.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
+    dbReq.template.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
         response(link, err, updItem, callback);
     });
 };
 
 exports.insert = function (link, dbReq, callback) {
-    dbReq.type.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
+    dbReq.template.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
         response(link, err, newItem, callback);
     });
 };
 
 exports.remove = function (link, dbReq, callback) {
-    dbReq.type.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
+    dbReq.template.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
         response(link, err, numOfRmDocs, callback);
     });
 };
