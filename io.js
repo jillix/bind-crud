@@ -11,7 +11,7 @@ function response (link, err, result, callback) {
     if (result.constructor.name === 'Cursor') {
         
         // send result
-        if (result.limitValue < 2) {
+        /*if (result.limitValue < 2) {
             return result.toArray(function (err, result) {
                 
                 if (!callback) {
@@ -27,7 +27,7 @@ function response (link, err, result, callback) {
                 
                 callback ? callback(err, result[0]) : link.send(err ? err.statusCode : 200, err ? err.toString(): result[0]);
             });
-        }
+        }*/
 
         if (callback) {
             return callback(null, result);

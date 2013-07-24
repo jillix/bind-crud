@@ -4,8 +4,8 @@ var modm = require('modm');
 // TODO let the user define this configs
 var config = {
     dbName: 'dms',
-    templateId: 'template',
-    templateColName: 'items',
+    templateId: '_template',
+    templateColName: 'd_templates',
     templateSchema: {
         _tp: {type: String, required: true},
         id: {type: String, required: true},
@@ -56,21 +56,22 @@ function initAndCache (template) {
     return templateCache[template.id] = template;
 }
 
+// TODO check access
 function fetchTemplatesFromDb (templates, role, fields, callback) {
     
     // build query
     var dbReq = {
         query: {
-            id: templates.length > 1 ? {$in: []} : '',
-            _tp: config.templateId,
-            _ln: [{_tp: 'role'}]
+            _id: templates.length > 1 ? {$in: []} : '',
+            _tp: config.templateId
+            //_ln: [{_tp: 'role'}]
         },
         options: {limit: templates.length, fields: fields || {}},
         template: templateCache.template
     };
     
     // check if role has write access
-    dbReq.query._ln[0].id = {$gt: 0};
+    //dbReq.query._ln[0]._id = {$gt: 0};
     
     if (templates.length > 1) {
         for (var i = 0, l = templates.length; i < l; ++i) {
@@ -80,10 +81,10 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
                 return callback(err);
             }
             
-            dbReq.query.id.$in.push(templates[i]);
+            dbReq.query._id.$in.push(templates[i]);
         }
     } else {
-        dbReq.query.id = templates[0];
+        dbReq.query._id = templates[0];
     }
     
     io.find(null, dbReq, function (err, cursor) {
@@ -120,7 +121,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
 function getTemplate (request, callback) {
 
     if (!templateCache[request.templateId]) {
-        return fetchTemplatesFromDb([request.templateId], request.role, {_id: 0}, function (err, template) {
+        return fetchTemplatesFromDb([request.templateId], request.role, {}, function (err, template) {
             
             if (err) {
                 err.statusCode = err.statusCode || 500;
@@ -168,14 +169,14 @@ function getTemplates (link) {
     }
     
     if (queryTemplates.length > 0) {
-        return fetchTemplatesFromDb(queryTemplates, link.session._rid, {_id: 0, id: 1}, function (err, templates) {
+        return fetchTemplatesFromDb(queryTemplates, link.session._rid, {}, function (err, templates) {
             
             if (err) {
                 return link.send(err.statusCode || 500, err.message);
             }
             
             for (var i = 0, l = templates.length; i < l; ++i) {
-                cachedTemplates[templates[i].id] = initAndCache(templates[i]).schema.paths;
+                cachedTemplates[templates[i]._id] = initAndCache(templates[i]).schema.paths;
             }
             
             link.send(200, cachedTemplates);
