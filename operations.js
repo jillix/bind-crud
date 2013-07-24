@@ -1,5 +1,5 @@
 var model = require('./model');
-var types = require('./types');
+var templates = require('./templates');
 
 exports.find = function (link) {
     model('find', link);
@@ -17,6 +17,6 @@ exports.insert = function (link) {
     model('insert', link);
 };
 
-exports.getTypes = function (link) {
-    types.getTypes(link);
+exports.getTemplates = function (link) {
+    templates.getTemplates(link);
 }

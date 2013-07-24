@@ -10,6 +10,6 @@
         { "file": "operations.js", "function": "remove" },
         { "file": "operations.js", "function": "update" },
         { "file": "operations.js", "function": "insert" },
-        { "file": "operations.js", "function": "getTypes" }
+        { "file": "operations.js", "function": "getTemplates" }
     ]
 }
