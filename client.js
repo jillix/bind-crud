@@ -1,5 +1,5 @@
 M.wrap('github/jillix/bind-crud/dev/client.js', function (require, module, exports) {
-var methods = ['find','remove','update','insert', 'getTypes'];
+var methods = ['find','remove','update','insert', 'getTemplates'];
 
 function init (config) {
     var self = this;
