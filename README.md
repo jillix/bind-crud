@@ -15,6 +15,8 @@ and forward their requests to the server. All these events must have two paramet
  * the **CRUD object** defined by the CRUD module. See **example below**.
  * the **callback** to be called with the results when the operation completes.
 
+There is also a `getTypes` event which fetches template data. Pass an array with template names as first parameters and the callback as second.
+
 ####Example request data:
 ```js
 {
