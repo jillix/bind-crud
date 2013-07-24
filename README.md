@@ -18,7 +18,7 @@ and forward their requests to the server. All these events must have two paramet
 ####Example request data:
 ```js
 {
-    // the template this this CRUD object will be validated against
+    // the template that this CRUD object will be validated against
     t: 'templateType',
     // the query object in MongoDB format
     q: {/*query object*/},
