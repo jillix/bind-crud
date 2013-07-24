@@ -3,9 +3,9 @@ var modm = require('modm');
 
 // TODO let the user define this configs
 var config = {
-    dbName: 'dms',
-    templateId: '_template',
-    templateColName: 'd_templates',
+    dbName: 'dms', // TODO handle with datasources
+    templateId: '_template', // TODO handle with datasources
+    templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
         _tp: {type: String, required: true},
         id: {type: String, required: true},
@@ -59,7 +59,7 @@ function initAndCache (template) {
     });
     template.schema = new modm.Schema(template.schema);
     template.collection = template.model(template.collection, template.schema);
-    return templateCache[template.id] = template;
+    return templateCache[template._id] = template;
 }
 
 // TODO check access
@@ -134,8 +134,7 @@ function getTemplate (request, callback) {
                 return callback(err);
             }
             
-            template = template[0];
-            request.template = initAndCache(template);
+            request.template = initAndCache(template[0]);
             
             if (!request.template) {
                 err = new Error('Bad template object.');

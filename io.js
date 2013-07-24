@@ -10,25 +10,6 @@ function response (link, err, result, callback) {
 
     if (result.constructor.name === 'Cursor') {
         
-        // send result
-        /*if (result.limitValue < 2) {
-            return result.toArray(function (err, result) {
-                
-                if (!callback) {
-                    
-                    if (err) {
-                        err.statusCode = 500;
-                    }
-                    
-                    if (typeof result[0] === 'undefined' || err) {
-                        link.res.headers['content-type'] = 'text/plain';
-                    }
-                }
-                
-                callback ? callback(err, result[0]) : link.send(err ? err.statusCode : 200, err ? err.toString(): result[0]);
-            });
-        }*/
-
         if (callback) {
             return callback(null, result);
         }
