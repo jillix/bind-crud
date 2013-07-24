@@ -1,11 +1,11 @@
 var io = require('./io');
-var types = require('./types');
+var templates = require('./templates');
 
 function createRequest (link) {
     
     var data = link.data || {};
     
-    // type is mandatory
+    // template id is mandatory
     if (!data.t) {
         return;
     }
@@ -13,7 +13,7 @@ function createRequest (link) {
     var request = {
         role: link.session._rid,
         options: {},
-        typeName: data.t
+        templateId: data.t
     };
 
     // query
@@ -51,8 +51,8 @@ module.exports = function (method, link) {
         return link.send(400, 'Bad request.');
     }
     
-    // get type (cache)
-    types.getType(request, function (err, request) {
+    // get template (cache)
+    template.getTemplate(request, function (err, request) {
         
         if (err) {
             return link.send(err.statusCode || 500, err.message);
@@ -62,4 +62,3 @@ module.exports = function (method, link) {
         io[method](link, request);
     });
 };
-
