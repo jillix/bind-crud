@@ -8,10 +8,10 @@ var config = {
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
         _tp: {type: String, required: true},
-        id: {type: String, required: true},
+        _id: {type: String, required: true},
         _ln: [{
             _tp: {type: String},
-            id: {type: String}
+            _id: {type: String}
         }],
         db: {type: String, required: true},
         collection: {type: String, required: true},
@@ -57,6 +57,30 @@ function initAndCache (template) {
         server: {pooSize: 3},
         db: {w: 1}
     });
+    
+    // add mandatory field _tp
+    template.schema._tp = {
+        type: String,
+        required: true
+    };
+    
+    // add mandatory field _id
+    template.schema._id = {
+        type: 'objectid',
+        required: true
+    };
+    
+    // add mandatory field _ln
+    if (!template.schema._ln) {
+        template.schema._ln = [{}];
+    }
+    
+    // add mandatory field _ln._tp
+    template.schema._ln[0]._tp = String;
+    
+    // add mandatory field _ln._id
+    template.schema._ln[0]._id = 'objectid';
+    
     template.schema = new modm.Schema(template.schema);
     template.collection = template.model(template.collection, template.schema);
     return templateCache[template._id] = template;

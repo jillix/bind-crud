@@ -38,6 +38,24 @@ function createRequest (link) {
     return request;
 }
 
+function convertToObjectId (request) {
+    try {
+        // convert _id to MongoDB's ObjectId
+        if (request.query._id) {
+            request.query._id = request.template.model.driver.ObjectID(request.query._id);
+        }
+        
+        // convert _ln._id to MongoDB's ObjectId
+        if (request.query['_ln._id']) {
+            request.query['_ln._id'] = request.template.model.driver.ObjectID(request.query['_ln._id']);
+        }
+        
+        return request;
+    } catch (err) {
+        return;
+    }
+}
+
 module.exports = function (method, link) {
     
     if (!io[method]) {
@@ -56,6 +74,12 @@ module.exports = function (method, link) {
         
         if (err) {
             return link.send(err.statusCode || 500, err.message);
+        }
+        
+        request = convertToObjectId(request);
+        
+        if (!request) {
+            return link.send(400, 'Incorrect ObjectId format');
         }
         
         // do input/output
