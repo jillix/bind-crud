@@ -214,7 +214,11 @@ function getTemplates (link) {
             for (var i = 0, l = templates.length; i < l; ++i) {
                 cachedTemplates[templates[i]._id] = initAndCache(templates[i]);
                 if (cachedTemplates[templates[i]._id]) {
-                    cachedTemplates[templates[i]._id] = cachedTemplates[templates[i]._id].schema.paths
+                    cachedTemplates[templates[i]._id] = {
+                        id: cachedTemplates[templates[i]._id]._id,
+                        name: cachedTemplates[templates[i]._id].name,
+                        schema: cachedTemplates[templates[i]._id].schema.paths
+                    }
                 }
             }
             
