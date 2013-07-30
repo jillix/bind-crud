@@ -184,7 +184,7 @@ function getTemplate (request, callback) {
 function getTemplates (link) {
     
     var templates = link.data;
-    var cachedTemplates = {};
+    var resultTemplates = {};
     var queryTemplates = [];
     var addedTemplates = {};
     
@@ -197,7 +197,11 @@ function getTemplates (link) {
     for (var i = 0, l = templates.length; i < l; ++i) {
         // add to result if role has access
         if (templateCache[templates[i]] && checkAccess(templateCache[templates[i]], link.session._rid, 1)) {
-            cachedTemplates[templates[i]] = templateCache[templates[i]].schema.paths;
+            resultTemplates[templates[i]] = {
+                id: templateCache[templates[i]]._id,
+                name: templateCache[templates[i]].name,
+                schema: templateCache[templates[i]].schema.paths
+            };
         } else if (!addedTemplates[templates[i]]) {
             addedTemplates[templates[i]] = true;
             queryTemplates.push(templates[i]);
@@ -212,21 +216,21 @@ function getTemplates (link) {
             }
             
             for (var i = 0, l = templates.length; i < l; ++i) {
-                cachedTemplates[templates[i]._id] = initAndCache(templates[i]);
-                if (cachedTemplates[templates[i]._id]) {
-                    cachedTemplates[templates[i]._id] = {
-                        id: cachedTemplates[templates[i]._id]._id,
-                        name: cachedTemplates[templates[i]._id].name,
-                        schema: cachedTemplates[templates[i]._id].schema.paths
+                resultTemplates[templates[i]._id] = initAndCache(templates[i]);
+                if (resultTemplates[templates[i]._id]) {
+                    resultTemplates[templates[i]._id] = {
+                        id: templateCache[templates[i]._id]._id,
+                        name: templateCache[templates[i]._id].name,
+                        schema: templateCache[templates[i]._id].schema.paths
                     }
                 }
             }
             
-            link.send(200, cachedTemplates);
+            link.send(200, resultTemplates);
         });
     }
     
-    link.send(200, cachedTemplates);
+    link.send(200, resultTemplates);
 }
 
 exports.getTemplate = getTemplate;
