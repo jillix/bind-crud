@@ -10,9 +10,11 @@ function init (config) {
             for (var ii = 0, ll = methods.length; ii < ll; ++ii) {
                 self.on(methods[ii], config.listen[i], (function (method) {    
                     return function (data, callback) {
-                        if (typeof data === 'object') {
-                            self.link(method, {data: data}, callback);
+                        if (typeof data === 'function') {
+                            callback = data;
+                            data = null;
                         }
+                        self.link(method, {data: data}, callback);
                     };
                 })(methods[ii]));
             }
