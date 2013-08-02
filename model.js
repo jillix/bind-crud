@@ -1,12 +1,20 @@
 var io = require('./io');
 var templates = require('./templates');
+var ObjectId = require('modm').ObjectId;
 
-function createRequest (link) {
+function createRequest (method, link) {
     
     var data = link.data || {};
     
     // template id is mandatory
     if (!data.t) {
+        return;
+    }
+    
+    // convert templateid to object id
+    try {
+        data.t = ObjectId(data.t);
+    } catch (err) {
         return;
     }
     
@@ -22,6 +30,12 @@ function createRequest (link) {
     
     // update
     if (data.d && data.d.constructor.name === 'Object') {
+        
+        // set type
+        if (method === 'insert') {
+            data.d._tp = data.t;
+        }
+        
         request.data = data.d;
     }
     
@@ -63,7 +77,7 @@ module.exports = function (method, link) {
     }
     
     // check parameters
-    var request = createRequest(link);
+    var request = createRequest(method, link);
 
     if (!request) {
         return link.send(400, 'Bad request.');

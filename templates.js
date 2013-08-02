@@ -180,6 +180,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
                     return callback(err);
                 }
                 
+                
                 if (!templates || templates.length === 0) {
                     var err = new Error('Templates not found.');
                     err.statusCode = 404;
