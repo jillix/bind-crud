@@ -8,10 +8,9 @@ var config = {
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
         _tp: {type: String, required: true},
-        _id: {type: String, required: true},
         _ln: [{
             _tp: {type: String},
-            _id: {type: String}
+            _id: {type: Object}
         }],
         db: {type: String, required: true},
         collection: {type: String, required: true},

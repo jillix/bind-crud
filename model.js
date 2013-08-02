@@ -11,13 +11,6 @@ function createRequest (method, link) {
         return;
     }
     
-    // convert templateid to object id
-    try {
-        data.t = ObjectId(data.t);
-    } catch (err) {
-        return;
-    }
-    
     var request = {
         role: link.session._rid,
         options: {},
@@ -56,7 +49,17 @@ function convertToObjectId (request) {
     try {
         // convert _id to MongoDB's ObjectId
         if (request.query._id) {
-            request.query._id = request.template.model.driver.ObjectID(request.query._id);
+            
+            // convert with operators
+            if (typeof request.query._id === 'object') {
+                for (var op in request.query._id) {
+                    for (var i = 0, l = request.query._id[op].length; i < l; ++i) {
+                        request.query._id[op][i] = request.template.model.driver.ObjectID(equest.query._id[op][i]);
+                    }
+                }
+            } else {
+                request.query._id = request.template.model.driver.ObjectID(request.query._id);
+            }
         }
         
         // convert _ln._id to MongoDB's ObjectId
@@ -95,7 +98,7 @@ module.exports = function (method, link) {
         if (!request) {
             return link.send(400, 'Incorrect ObjectId format');
         }
-        
+        console.log(request.query);
         // do input/output
         io[method](link, request);
     });
