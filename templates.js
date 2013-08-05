@@ -4,12 +4,12 @@ var modm = require('modm');
 // TODO let the user define this configs
 var config = {
     dbName: 'dms', // TODO handle with datasources
-    templateId: '_template', // TODO handle with datasources
+    templateId: modm.ObjectId('51ff83396fbe99067720c829'), // TODO handle with datasources
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
-        _tp: {type: String, required: true},
+        _tp: {type: Object, required: true},
         _ln: [{
-            _tp: {type: String},
+            _tp: {type: Object},
             _id: {type: Object}
         }],
         db: {type: String, required: true},
@@ -39,6 +39,14 @@ var templateCache = {
 // init collection
 templateCache.template.collection = templateCache.template.model(config.templateColName, templateSchema);
 
+function ObjectId (id) {
+    try {
+        return modm.ObjectId(id);
+    } catch (err) {
+        return null;
+    }
+}
+
 //TODO check access
 function checkAccess (template, role, access) {
     /*if (template.roles[role] < access) {
@@ -59,7 +67,7 @@ function initAndCache (template) {
     
     // add mandatory field _tp
     template.schema._tp = {
-        type: String,
+        type: 'objectid',
         required: true
     };
     
@@ -75,7 +83,7 @@ function initAndCache (template) {
     }
     
     // add mandatory field _ln._tp
-    template.schema._ln[0]._tp = String;
+    template.schema._ln[0]._tp = 'objectid';
     
     // add mandatory field _ln._id
     template.schema._ln[0]._id = 'objectid';
@@ -143,7 +151,8 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
             dbReq.options.limit = templates.length;
             
             for (var i = 0, l = templates.length; i < l; ++i) {
-                if (typeof templates[i] !== 'string' || templates[i].length < 1) {
+                templates[i] = ObjectId(templates[i]);
+                if (!templates[i]) {
                     var err = new Error('Invalid templates.');
                     err.statusCode = 400;
                     return callback(err);
@@ -153,11 +162,17 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
             }
         } else if (templates.length > 0) {
             
-            dbReq.options.limit = 1;
-            dbReq.query._id = templates[0];
+            if (templates[0] = ObjectId(templates[0])) {
+                dbReq.options.limit = 1;
+                dbReq.query._id = templates[0];
+            } else {
+                var err = new Error('Invalid templates.');
+                err.statusCode = 400;
+                return callback(err);
+            }
         }
     }
-    
+    //console.log(dbReq.query);
     if (!tpls || tpls.query.length > 0) {
         io.find(null, dbReq, function (err, cursor) {
             
