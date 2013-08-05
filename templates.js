@@ -4,7 +4,7 @@ var modm = require('modm');
 // TODO let the user define this configs
 var config = {
     dbName: 'dms', // TODO handle with datasources
-    templateId: modm.ObjectId('51ff83396fbe99067720c829'), // TODO handle with datasources
+    templateId: modm.ObjectId('000000000000000000000000'), // TODO handle with datasources
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
         _tp: {type: 'objectid', required: true},
