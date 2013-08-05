@@ -7,10 +7,10 @@ var config = {
     templateId: modm.ObjectId('51ff83396fbe99067720c829'), // TODO handle with datasources
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
-        _tp: {type: Object, required: true},
+        _tp: {type: 'objectid', required: true},
         _ln: [{
-            _tp: {type: Object},
-            _id: {type: Object}
+            _tp: {type: 'objectid'},
+            _id: {type: 'objectid'}
         }],
         db: {type: String, required: true},
         collection: {type: String, required: true},

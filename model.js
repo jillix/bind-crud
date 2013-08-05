@@ -54,17 +54,27 @@ function convertToObjectId (request) {
             if (typeof request.query._id === 'object') {
                 for (var op in request.query._id) {
                     for (var i = 0, l = request.query._id[op].length; i < l; ++i) {
-                        request.query._id[op][i] = request.template.model.driver.ObjectID(equest.query._id[op][i]);
+                        request.query._id[op][i] = ObjectId(equest.query._id[op][i]);
                     }
                 }
             } else {
-                request.query._id = request.template.model.driver.ObjectID(request.query._id);
+                request.query._id = ObjectId(request.query._id);
             }
+        }
+        
+        // convert _tp to MongoDB's ObjectId
+        if (request.query['_tp']) {
+            request.query['_tp'] = ObjectId(request.query['_tp']);
         }
         
         // convert _ln._id to MongoDB's ObjectId
         if (request.query['_ln._id']) {
-            request.query['_ln._id'] = request.template.model.driver.ObjectID(request.query['_ln._id']);
+            request.query['_ln._id'] = ObjectId(request.query['_ln._id']);
+        }
+        
+        // convert _ln._tp to MongoDB's ObjectId
+        if (request.query['_ln._tp']) {
+            request.query['_ln._tp'] = ObjectId(request.query['_ln._id']);
         }
         
         return request;
@@ -98,7 +108,7 @@ module.exports = function (method, link) {
         if (!request) {
             return link.send(400, 'Incorrect ObjectId format');
         }
-        console.log(request.query);
+        
         // do input/output
         io[method](link, request);
     });
