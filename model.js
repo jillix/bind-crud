@@ -81,11 +81,13 @@ function convertToObjectId (request) {
         }
 
         // convert _ln.$elemMatch keys to MongoDB's ObjectId
-        if (request.query['_ln']['$elemMatch']) {
-            var elemMatch = request.query['_ln']['$elemMatch'];
-            for (var i in elemMatch) {
-                if (['_id', '_tp'].indexOf(i) > -1) {
-                    elemMatch[i] = ObjectId(elemMatch[i]);
+        if (request.query['_ln'] && request.query['_ln']['$elemMatch']) {
+            if (request.query['_ln']['$elemMatch']) {
+                var elemMatch = request.query['_ln']['$elemMatch'];
+                for (var i in elemMatch) {
+                    if (['_id', '_tp'].indexOf(i) > -1) {
+                        elemMatch[i] = ObjectId(elemMatch[i]);
+                    }
                 }
             }
         }
