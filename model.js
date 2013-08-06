@@ -26,7 +26,7 @@ function createRequest (method, link) {
 
         // set type
         if (method === 'insert') {
-            data.d._tp = data.t;
+            data.d._tp = ObjectId(data.t);
         }
 
         request.data = data.d;
@@ -81,14 +81,14 @@ function convertToObjectId (request) {
         }
 
         // convert _ln.$elemMatch keys to MongoDB's ObjectId
-        if (request.query['_ln']['$elemMatch']) {
+        /*if (request.query['_ln']['$elemMatch']) {
             var elemMatch = request.query['_ln']['$elemMatch'];
             for (var i in elemMatch) {
                 if (['_id', '_tp'].indexOf(i) > -1) {
                     elemMatch[i] = ObjectId(elemMatch[i]);
                 }
             }
-        }
+        }*/
 
         return request;
     } catch (err) {
@@ -117,11 +117,11 @@ module.exports = function (method, link) {
         }
 
         request = convertToObjectId(request);
-
+        
         if (!request) {
             return link.send(400, 'Incorrect ObjectId format');
         }
-
+        
         // do input/output
         io[method](link, request);
     });

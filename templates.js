@@ -7,15 +7,17 @@ var config = {
     templateId: modm.ObjectId('000000000000000000000000'), // TODO handle with datasources
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
+        _id: {type: 'objectid'},
         _tp: {type: 'objectid', required: true},
         _ln: [{
             _tp: {type: 'objectid'},
             _id: {type: 'objectid'}
         }],
-        db: {type: String, required: true},
-        collection: {type: String, required: true},
-        roles: {type: Object, required: true},
-        schema: {type: Object, required: true}
+        db: {type: 'string', required: true},
+        collection: {type: 'string', required: true},
+        name: {type: 'string', required: true},
+        roles: {type: 'object', required: true},
+        schema: {type: 'object', required: true}
     }
 };
 
@@ -25,7 +27,7 @@ var templateSchema = new modm.Schema(config.templateSchema);
 var templateCache = {
     // template's template must be in the cache, otherwise 
     // it's impossible to create the first template item
-    template: {
+    '000000000000000000000000': {
         db: config.dbName,
         collection: config.templateColName,
         roles: {3: 1}, // 0 = no access, 1 = read, 2 = write
@@ -37,7 +39,7 @@ var templateCache = {
     }
 };
 // init collection
-templateCache.template.collection = templateCache.template.model(config.templateColName, templateSchema);
+templateCache[config.templateId].collection = templateCache[config.templateId].model(config.templateColName, templateSchema);
 
 function ObjectId (id) {
     try {
@@ -135,7 +137,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
             //_ln: [{_tp: 'role'}]
         },
         options: {fields: fields || {}},
-        template: templateCache.template
+        template: templateCache[config.templateId]
     };
     
     if (tpls) {
