@@ -45,56 +45,49 @@ function createRequest (method, link) {
     return request;
 }
 
-function convertToObjectId (request) {
-    try {
-        // convert _id to MongoDB's ObjectId
-        if (request.query._id) {
+var CORE_KEY_REGEXP = new RegExp(/^(_ln\.)?(_id|_tp)$/);
 
-            // convert with operators
-            if (typeof request.query._id === 'object') {
-                for (var op in request.query._id) {
-                    for (var i = 0, l = request.query._id[op].length; i < l; ++i) {
-                        request.query._id[op][i] = ObjectId(equest.query._id[op][i]);
-                    }
-                }
-            } else {
-                request.query._id = ObjectId(request.query._id);
-            }
+function recursiveConvert(obj, all) {
+
+    // if array of objects (array )
+    if (obj.constructor.name === 'Array') {
+        for (var i in obj) {
+            recursiveConvert(obj[i], all);
         }
-
-        // convert _tp to MongoDB's ObjectId
-        if (request.query['_tp']) {
-            request.query['_tp'] = ObjectId(request.query['_tp']);
-        }
-
-        // convert _ln._id to MongoDB's ObjectId
-        if (request.query['_ln._id']) {
-            request.query['_ln._id'] = ObjectId(request.query['_ln._id']);
-        }
-
-        // convert _ln._tp to MongoDB's ObjectId
-        if (request.query['_ln._tp']) {
-            var tp = request.query['_ln._tp'];
-            for (var i in tp) {
-                tp[i] = ObjectId(tp[i]);
-            }
-        }
-
-        // convert _ln.$elemMatch keys to MongoDB's ObjectId
-        if (request.query['_ln'] && request.query['_ln']['$elemMatch']) {
-            if (request.query['_ln']['$elemMatch']) {
-                var elemMatch = request.query['_ln']['$elemMatch'];
-                for (var i in elemMatch) {
-                    if (['_id', '_tp'].indexOf(i) > -1) {
-                        elemMatch[i] = ObjectId(elemMatch[i]);
-                    }
-                }
-            }
-        }
-
-        return request;
-    } catch (err) {
         return;
+    }
+
+    // if object
+    if (typeof obj === 'object') {
+        for (var key in obj) {
+            if (obj[key] === null || obj[key] === undefined) {
+                continue;
+            }
+
+            // are we talking business here?
+            var isMatch = CORE_KEY_REGEXP.test(key) || all;
+
+            if (typeof obj[key] === 'string' && isMatch) {
+                obj[key] = ObjectId(obj[key]);
+                continue;
+            }
+
+            // treat array here in order not to loose the reference
+            if (obj[key].constructor.name === 'Array') {
+                if (typeof obj[key][0] === 'object') {
+                    recursiveConvert(obj[key], isMatch);
+                } else if (isMatch) {
+                    for (var i in obj[key]) {
+                        obj[key][i] = new ObjectId(obj[key][i]);
+                    }
+                }
+                continue;
+            }
+
+            if (typeof obj[key] === 'object') {
+                recursiveConvert(obj[key], isMatch);
+            }
+        }
     }
 }
 
@@ -118,9 +111,9 @@ module.exports = function (method, link) {
             return link.send(err.statusCode || 500, err.message);
         }
 
-        request = convertToObjectId(request);
-        
-        if (!request) {
+        try {
+            recursiveConvert(request.query);
+        } catch (err) {
             return link.send(400, 'Incorrect ObjectId format');
         }
         
