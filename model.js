@@ -26,7 +26,7 @@ function createRequest (method, link) {
 
         // set type
         if (method === 'insert') {
-            data.d._tp = ObjectId(data.t);
+            data.d._tp = data.t;
         }
 
         request.data = data.d;
