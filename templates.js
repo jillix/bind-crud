@@ -256,6 +256,10 @@ function getTemplates (link) {
                 name: templates[template].name,
                 schema: templates[template].schema.paths
             };
+            
+            if (templates[template].html) {
+                result[template].html = templates[template].html;
+            }
         }
         
         link.send(200, result);
