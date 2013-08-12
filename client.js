@@ -1,6 +1,8 @@
 M.wrap('github/jillix/bind-crud/dev/client.js', function (require, module, exports) {
 var methods = ['find','remove','update','insert', 'getTemplates'];
 
+// TODO cache templates
+
 function init (config) {
     var self = this;
     
