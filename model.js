@@ -12,7 +12,7 @@ function createRequest (method, link) {
     }
 
     var request = {
-        role: link.session._rid,
+        role: link.session.crudRole || link.session._rid,
         options: {},
         templateId: data.t
     };
