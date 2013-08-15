@@ -83,7 +83,7 @@ function initAndCache (template) {
     template.roles = {};
     for (var i = 0; i < template._ln.length; ++i) {
         var currentRole = template._ln[i];
-        if (currentRole === "000000000000000000000001") {
+        if (currentRole._tp.toString() === "000000000000000000000001") {
             template.roles[currentRole._id] = currentRole.access;
         }
     }
