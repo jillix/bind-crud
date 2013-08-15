@@ -79,6 +79,15 @@ function initAndCache (template) {
         required: true
     };
     
+    // add roles from template._ln
+    template.roles = {};
+    for (var i = 0; i < template._ln.length; ++i) {
+        var currentRole = template._ln[i];
+        if (currentRole === "000000000000000000000001") {
+            template.roles[currentRole._id] = currentRole.access;
+        }
+    }
+
     // add mandatory field _ln
     if (!template.schema._ln) {
         template.schema._ln = [{}];
