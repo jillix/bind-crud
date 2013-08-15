@@ -5,6 +5,7 @@ var modm = require('modm');
 var config = {
     dbName: 'dms', // TODO handle with datasources
     templateId: modm.ObjectId('000000000000000000000000'), // TODO handle with datasources
+    roleTemplateId: modm.ObjectId('000000000000000000000001'),
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
         _id: {type: 'objectid'},
@@ -30,7 +31,6 @@ var templateCache = {
     '000000000000000000000000': {
         db: config.dbName,
         collection: config.templateColName,
-        roles: {3: 1}, // 0 = no access, 1 = read, 2 = write
         schema: templateSchema,
         model: modm(config.dbName, {
             server: {pooSize: 3},
@@ -49,11 +49,18 @@ function ObjectId (id) {
     }
 }
 
-//TODO check access
+// check access
 function checkAccess (template, role, access) {
-    /*if (template.roles[role] < access) {
+    
+    // grant access for templates without roles
+    if (!template.roles) {
+        return true;
+    }
+    
+    if (template.roles[role] < access) {
         return false;
-    }*/
+    }
+    
     return true;
 }
 
@@ -83,7 +90,7 @@ function initAndCache (template) {
     template.roles = {};
     for (var i = 0; i < template._ln.length; ++i) {
         var currentRole = template._ln[i];
-        if (currentRole._tp.toString() === "000000000000000000000001") {
+        if (currentRole._tp.toString() === config.roleTemplateId.toString()) {
             template.roles[currentRole._id] = currentRole.access;
         }
     }
@@ -133,7 +140,6 @@ function getCachedTemplates (templates, role) {
     }
 }
 
-// TODO check access
 function fetchTemplatesFromDb (templates, role, fields, callback) {
     
     var tpls = getCachedTemplates(templates, role);
@@ -141,10 +147,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
     
     // build query
     var dbReq = {
-        query: {
-            _tp: config.templateId
-            //_ln: [{_tp: 'role'}]
-        },
+        query: {_tp: config.templateId},
         options: {fields: fields || {}},
         template: templateCache[config.templateId]
     };
@@ -154,11 +157,16 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
         resultTemplates = tpls.cached;
         
         // check if role has write access
-        //dbReq.query._ln[0]._id = {$gt: 0};
+        dbReq.query._ln = {
+            $elemMatch: {
+                _tp: config.roleTemplateId,
+                _id: role
+            }
+        };
         
         if (templates.length > 1) {
             
-            dbReq.query._id ={$in: []};
+            dbReq.query._id = {$in: []};
             dbReq.options.limit = templates.length;
             
             for (var i = 0, l = templates.length; i < l; ++i) {
@@ -183,7 +191,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
             }
         }
     }
-    //console.log(dbReq.query);
+    
     if (!tpls || tpls.query.length > 0) {
         io.find(null, dbReq, function (err, cursor) {
             
@@ -199,12 +207,11 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
             }
             
             cursor.toArray(function (err, templates) {
-                    
+                
                 if (err) {
                     err.statusCode = 500;
                     return callback(err);
                 }
-                
                 
                 if (!templates || templates.length === 0) {
                     var err = new Error('Templates not found.');
@@ -252,7 +259,7 @@ function getTemplates (link) {
     
     var templates = link.data;
     
-    fetchTemplatesFromDb(templates, link.session._rid, {}, function (err, templates) {
+    fetchTemplatesFromDb(templates, link.session.crudRole, {}, function (err, templates) {
         
         if (err) {
             return link.send(err.statusCode || 500, err.message);

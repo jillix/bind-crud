@@ -12,15 +12,27 @@ function createRequest (method, link) {
     }
 
     var request = {
-        role: link.session.crudRole || link.session._rid,
+        role: link.session.crudRole,
         options: {},
         templateId: data.t
     };
-
+    
     // query
     request.query = data.q || {};
     request.query._tp = data.t;
-
+    
+    // check access for template items when querying templates
+    // TODO make the objectid strings configurable
+    if (data.t === '000000000000000000000000') {
+        request.query._ln = {
+            $elemMatch: {
+                _tp: '000000000000000000000001',
+                _id: request.role,
+                access: {$gt: 0}
+            }
+        };
+    }
+    
     // update
     if (data.d && data.d.constructor.name === 'Object') {
 
@@ -58,7 +70,7 @@ function recursiveConvert(obj, all) {
     }
 
     // if object
-    if (typeof obj === 'object') {
+    if (typeof obj === 'object' && obj.constructor.name.toLowerCase() !== 'objectid') {
         for (var key in obj) {
             if (obj[key] === null || obj[key] === undefined) {
                 continue;
@@ -78,7 +90,7 @@ function recursiveConvert(obj, all) {
                     recursiveConvert(obj[key], isMatch);
                 } else if (isMatch) {
                     for (var i in obj[key]) {
-                        obj[key][i] = new ObjectId(obj[key][i]);
+                        obj[key][i] = ObjectId(obj[key][i]);
                     }
                 }
                 continue;
