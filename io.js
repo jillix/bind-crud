@@ -35,8 +35,20 @@ function response (link, err, result, callback) {
     }
 }
 
+function hasAccess (link, req, access) {
+    req.template = req.template || { "roles": {} };
+    
+    if (!link) { return true; }
+    if (!link.session || !link.session.crudRole) { return false; }
+    if (req.template.roles[link.session.crudRole] < access) { return false; }
+
+    return true;
+}
+
 // read
 exports.find = function (link, dbReq, callback) {
+    if (!hasAccess(link, dbReq, 1)) { return link.send(400, "Access denied."); }
+
     dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
         response(link, err, cursor, callback);
     });
@@ -44,18 +56,24 @@ exports.find = function (link, dbReq, callback) {
 
 // write
 exports.update = function (link, dbReq, callback) {
+    if (!hasAccess(link, dbReq, 2)) { return link.send(400, "Access denied."); }
+    
     dbReq.template.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
         response(link, err, updItem, callback);
     });
 };
 
 exports.insert = function (link, dbReq, callback) {
+    if (!hasAccess(link, dbReq, 2)) { return link.send(400, "Access denied."); }
+    
     dbReq.template.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
         response(link, err, newItem, callback);
     });
 };
 
 exports.remove = function (link, dbReq, callback) {
+    if (!hasAccess(link, dbReq, 3)) { return link.send(400, "Access denied."); }
+
     dbReq.template.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
         response(link, err, numOfRmDocs, callback);
     });
