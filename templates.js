@@ -260,6 +260,10 @@ function getTemplates (link) {
             if (templates[template].html) {
                 result[template].html = templates[template].html;
             }
+
+            if (templates[template].filters) {
+                result[template].filters = templates[template].filters;
+            }
         }
         
         link.send(200, result);
