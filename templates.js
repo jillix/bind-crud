@@ -272,13 +272,13 @@ function getTemplates (link) {
                 name: templates[template].name,
                 schema: templates[template].schema.paths
             };
-            
-            if (templates[template].html) {
-                result[template].html = templates[template].html;
-            }
 
-            if (templates[template].filters) {
-                result[template].filters = templates[template].filters;
+            // let the UI template information go through
+            var uiElems = ['html', 'filters', 'sort'];
+            for (var i in uiElems) {
+                if (templates[template][uiElems[i]]) {
+                    result[template][uiElems[i]] = templates[template][uiElems[i]];
+                }
             }
         }
         
