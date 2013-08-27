@@ -65,6 +65,7 @@ function checkAccess (template, role, access) {
 }
 
 function initAndCache (template) {
+
     if (typeof template.db !== 'string') {
         return;
     };
@@ -88,10 +89,12 @@ function initAndCache (template) {
     
     // add roles from template._ln
     template.roles = {};
-    for (var i = 0; i < template._ln.length; ++i) {
-        var currentRole = template._ln[i];
-        if (currentRole._tp.toString() === config.roleTemplateId.toString()) {
-            template.roles[currentRole._id] = currentRole.access;
+    if (template._ln) {
+        for (var i = 0; i < template._ln.length; ++i) {
+            var currentRole = template._ln[i];
+            if (currentRole._tp.toString() === config.roleTemplateId.toString()) {
+                template.roles[currentRole._id] = currentRole.access;
+            }
         }
     }
 
@@ -194,7 +197,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
     
     if (!tpls || tpls.query.length > 0) {
         io.find(null, dbReq, function (err, cursor) {
-            
+
             if (err) {
                 err.statusCode = 500;
                 return callback(err);
@@ -207,7 +210,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
             }
             
             cursor.toArray(function (err, templates) {
-                
+
                 if (err) {
                     err.statusCode = 500;
                     return callback(err);
@@ -255,29 +258,43 @@ function getTemplate (request, callback) {
     });
 }
 
+// TODO add more core templates here when necessary
+var CORE_TMPL_RE = new RegExp('00000000000000000000000(0|1|2)');
+
 function getTemplates (link) {
     
     var templates = link.data;
-    
+    var myRoleString = link.session.crudRole ? link.session.crudRole.toString() : '';
+
     fetchTemplatesFromDb(templates, link.session.crudRole, {}, function (err, templates) {
-        
+
         if (err) {
             return link.send(err.statusCode || 500, err.message);
         }
-        
+
         var result = {};
-        for (var template in templates) {
-            result[template] = {
-                id: templates[template]._id,
-                name: templates[template].name,
-                schema: templates[template].schema.paths
+
+        for (var id in templates) {
+            // if this is a core template
+            if (CORE_TMPL_RE.test(id)) {
+                // do not return templates for users that cannot modify them
+                // (only super-admins will have at least access 2)
+                if (templates[id].roles[myRoleString] < 2) {
+                    continue;
+                }
+            }
+
+            result[id] = {
+                id: templates[id]._id,
+                name: templates[id].name,
+                schema: templates[id].schema.paths
             };
 
             // let the UI template information go through
-            var uiElems = ['html', 'filters', 'sort'];
+            var uiElems = ['label', 'html', 'filters', 'sort'];
             for (var i in uiElems) {
-                if (templates[template][uiElems[i]]) {
-                    result[template][uiElems[i]] = templates[template][uiElems[i]];
+                if (templates[id][uiElems[i]]) {
+                    result[id][uiElems[i]] = templates[id][uiElems[i]];
                 }
             }
         }

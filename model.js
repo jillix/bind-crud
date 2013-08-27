@@ -2,6 +2,11 @@ var io = require('./io');
 var templates = require('./templates');
 var ObjectId = require('modm').ObjectId;
 
+var TTID = ObjectId('000000000000000000000000');
+var RTID = ObjectId('000000000000000000000001');
+var LTID = ObjectId('000000000000000000000002');
+
+
 function createRequest (method, link) {
 
     var data = link.data || {};
@@ -23,12 +28,12 @@ function createRequest (method, link) {
     
     // check access for template items when querying templates
     // TODO make the objectid strings configurable
-    if (data.t === '000000000000000000000000') {
+    if (data.t === TTID.toString()) {
         request.query._ln = {
             $elemMatch: {
-                _tp: '000000000000000000000001',
+                _tp: RTID,
                 _id: request.role,
-                access: {$gt: 0}
+                access: { $gt: 0 }
             }
         };
     }
@@ -128,7 +133,15 @@ module.exports = function (method, link) {
         } catch (err) {
             return link.send(400, 'Incorrect ObjectId format');
         }
-        
+
+        // we must add additional query filters if we request teamplates
+        // (this protects core templates from non super-admin users)
+        if (request.query._tp.toString() === TTID.toString()) {
+            request.query._id = {
+                $nin: [TTID, RTID, LTID]
+            };
+        }
+
         // do input/output
         io[method](link, request);
     });
