@@ -42,14 +42,14 @@ function templateHandler (templates, callback) {
     }
 };
 
-function init (config) {
+function setupListen (listen) {
     var self = this;
     
     // listen to crud events
-    if (config.listen instanceof Array) {
-        for (var i = 0, l = config.listen.length; i < l; ++i) {
+    if (listen instanceof Array) {
+        for (var i = 0, l = listen.length; i < l; ++i) {
             for (var ii = 0, ll = methods.length; ii < ll; ++ii) {
-                self.on(methods[ii], config.listen[i], (function (method) {    
+                self.on(methods[ii], listen[i], (function (method) {    
                     return function (data, callback) {
                         if (typeof data === 'function') {
                             callback = data;
@@ -60,11 +60,19 @@ function init (config) {
                 })(methods[ii]));
             }
             
-            self.on('getTemplates', config.listen[i], function (templates, callback) {
+            self.on('getTemplates', listen[i], function (templates, callback) {
                 templateHandler.call(self, templates, callback);
             });
         }
     }
+}
+
+function init (config) {
+    var self = this;
+    
+    // listen to crud events
+    setupListen.call(self, config.listen);
+    self.on('listenTo', setupListen);
     
     self.emit('ready');
 }
