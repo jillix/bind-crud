@@ -63,6 +63,10 @@ function setupListen (listen) {
             self.on('getTemplates', listen[i], function (templates, callback) {
                 templateHandler.call(self, templates, callback);
             });
+            
+            self.on('listenTo', listen[i], function (listenMiids) {
+                setupListen.call(self, listenMiids);
+            });
         }
     }
 }
@@ -72,8 +76,7 @@ function init (config) {
     
     // listen to crud events
     setupListen.call(self, config.listen);
-    self.on('listenTo', setupListen);
-    
+
     self.emit('ready');
 }
 
