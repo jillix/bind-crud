@@ -108,6 +108,92 @@ function recursiveConvert(obj, all) {
     }
 }
 
+// collect return fields and linked schemas
+function setRetunFields (request, callback) {
+    
+    // check callback
+    if (typeof callback !== 'function') {
+        return;
+    }
+    
+    // check if schema paths are available
+    if (!request || !request.template || !request.template.schema || !request.template.schema.paths) {
+        return callback('No schema paths available.');
+    }
+    
+    var schema = request.template.schema.paths;
+    var returnFields = request.options && request.options.fields ? request.options.fields : null;
+    var linkedFieldsToLoad = {length: 0};
+    var linkedTemplatesToLoad = {};
+    
+    // check if a return field points to a linked document
+    for (var field in schema) {
+        if (!schema[field].link) {
+            continue;
+        }
+        
+        if (returnFields) {
+            for (var returnField in returnFields) {
+                if (returnField.indexOf(field) === 0) {
+                    
+                    console.log('found a link in field "'+ field + '" ("' + returnField + '") and points to template "' + schema[field].link + '"');
+                    
+                    // collect fields who contain a link
+                    linkedFieldsToLoad[field] = 1;
+                    ++linkedFieldsToLoad.length;
+                    
+                    // get templates that must be loaded and save the cropped
+                    // schema paths to validate field in linked schema
+                    if (!linkedTemplatesToLoad[schema[field].link]) {
+                        linkedTemplatesToLoad[schema[field].link] = {};
+                    }
+                    
+                    linkedTemplatesToLoad[schema[field].link][returnField.substr(field.length + 1)] = 1;
+                }
+            }
+        } else {
+            
+            // collect fields who contain a link
+            linkedFieldsToLoad[field] = 1;
+            ++linkedFieldsToLoad.length;
+            
+            // get templates that must be loaded
+            linkedTemplatesToLoad[schema[field].link] = {};
+        }
+    }
+    
+    // get linked schema
+    if (linkedFieldsToLoad.length > 0) {
+        
+        // convert linked tempaltes object to an array
+        var linkedTemplatesToLoad_array = [];
+        for (var template in linkedTemplatesToLoad) {
+            linkedTemplatesToLoad_array.push(template);
+        }
+        
+        // get templates
+        templates.getTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
+            
+            if (err) {
+                return callback(err);
+            }
+            
+            // TODO check if the returnFields are in the linked schemas
+            console.log('schemas fetched');
+            console.log(linkedTemplatesToLoad);
+            console.log(fetchedTemplates);
+            
+            // TODO query and merge data
+            // #1 find data in template
+            // ---- loop in linked templates
+            // #2 create query for linked data
+            // #3 merge linked data in result data
+            // ---- loop end
+            // #4 send result
+        });
+    }
+}
+
 module.exports = function (method, link) {
 
     if (!io[method]) {
@@ -127,7 +213,11 @@ module.exports = function (method, link) {
         if (err) {
             return link.send(err.statusCode || 500, err.message);
         }
-
+        
+        setRetunFields(request, function (err, data) {
+            console.log(err, data);
+        });
+        
         try {
             recursiveConvert(request.query);
         } catch (err) {
@@ -143,6 +233,6 @@ module.exports = function (method, link) {
         }
 
         // do input/output
-        io[method](link, request);
+        //io[method](link, request);
     });
 };
