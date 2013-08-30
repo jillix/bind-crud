@@ -1,5 +1,5 @@
 function response (link, err, result, callback) {
-    
+
     if (err) {
         return callback ? callback(err) : link.send(err.statusCode || 500, err.toString());
     }
@@ -58,7 +58,19 @@ exports.find = function (link, dbReq, callback) {
     if (!hasAccess(link, dbReq, 1)) { return link.send(403, "Access denied."); }
 
     dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
-        response(link, err, cursor, callback);
+        
+        var countOptions = JSON.parse(JSON.stringify(dbReq.options));
+        
+        delete countOptions.limit;
+
+        dbReq.template.collection.count(dbReq.query, countOptions, function (countErr, count) {
+            
+            if (link && !countErr) {
+                link.res.headers['X-Mono-CRUD-Count'] = count.toString();
+            }
+            
+            response(link, err, cursor, callback);
+        });
     });
 };
 
