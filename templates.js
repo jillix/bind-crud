@@ -5,19 +5,14 @@ var modm = require('modm');
 var config = {
     dbName: 'dms', // TODO handle with datasources
     templateId: modm.ObjectId('000000000000000000000000'), // TODO handle with datasources
-    roleTemplateId: modm.ObjectId('000000000000000000000001'),
+    roleTemplateId: modm.ObjectId('000000000000000000000002'),
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
         _id: {type: 'objectid'},
         _tp: {type: 'objectid', required: true},
-        _ln: [{
-            _tp: {type: 'objectid'},
-            _id: {type: 'objectid'}
-        }],
         db: {type: 'string', required: true},
         collection: {type: 'string', required: true},
         name: {type: 'string', required: true},
-        roles: {type: 'object', required: true},
         schema: {type: 'object', required: true}
     }
 };
@@ -29,6 +24,8 @@ var templateCache = {
     // template's template must be in the cache, otherwise 
     // it's impossible to create the first template item
     '000000000000000000000000': {
+        _id: modm.ObjectId('000000000000000000000000'),
+        label: 'Templates',
         db: config.dbName,
         collection: config.templateColName,
         schema: templateSchema,
@@ -88,7 +85,7 @@ function initAndCache (template) {
     };
     
     // add roles from template._ln
-    template.roles = {};
+    /*template.roles = {};
     if (template._ln) {
         for (var i = 0; i < template._ln.length; ++i) {
             var currentRole = template._ln[i];
@@ -96,18 +93,18 @@ function initAndCache (template) {
                 template.roles[currentRole._id] = currentRole.access;
             }
         }
-    }
+    }*/
 
     // add mandatory field _ln
-    if (!template.schema._ln) {
+    /*if (!template.schema._ln) {
         template.schema._ln = [{}];
-    }
+    }*/
     
     // add mandatory field _ln._tp
-    template.schema._ln[0]._tp = 'objectid';
+    //template.schema._ln[0]._tp = 'objectid';
     
     // add mandatory field _ln._id
-    template.schema._ln[0]._id = 'objectid';
+    //template.schema._ln[0]._id = 'objectid';
     
     template.schema = new modm.Schema(template.schema);
     template.collection = template.model(template.collection, template.schema);
@@ -160,12 +157,12 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
         resultTemplates = tpls.cached;
         
         // check if role has write access
-        dbReq.query._ln = {
+        /*dbReq.query._ln = {
             $elemMatch: {
                 _tp: config.roleTemplateId,
                 _id: role
             }
-        };
+        };*/
         
         if (templates.length > 1) {
             
@@ -258,35 +255,45 @@ function getTemplate (request, callback) {
     });
 }
 
+function getMergeTemplates (templates, role, callback) {
+
+    fetchTemplatesFromDb(templates, role, {}, function (err, templates) {
+
+        if (err) {
+            return callback(err);
+        }
+        
+        callback(null, templates);
+    });
+}
+
 // TODO add more core templates here when necessary
 var CORE_TMPL_RE = new RegExp('00000000000000000000000(0|1|2)');
 
-function getTemplates (link) {
+function getTemplates (templates, role, callback) {
     
-    var templates = link.data;
-    var myRoleString = link.session.crudRole ? link.session.crudRole.toString() : '';
+    var myRoleString = role ? role.toString() : '';
 
-    fetchTemplatesFromDb(templates, link.session.crudRole, {}, function (err, templates) {
+    fetchTemplatesFromDb(templates, role, {}, function (err, templates) {
 
         if (err) {
-            return link.send(err.statusCode || 500, err.message);
+            return callback(err);
         }
-
+        
         var result = {};
-
         for (var id in templates) {
             // if this is a core template
-            if (CORE_TMPL_RE.test(id)) {
+            if (CORE_TMPL_RE.test(id) && templates[id].roles) {
                 // do not return templates for users that cannot modify them
                 // (only super-admins will have at least access 2)
                 if (templates[id].roles[myRoleString] < 2) {
                     continue;
                 }
             }
-
+            
             result[id] = {
                 id: templates[id]._id,
-                name: templates[id].name,
+                //name: templates[id].name,
                 schema: templates[id].schema.paths
             };
 
@@ -299,9 +306,10 @@ function getTemplates (link) {
             }
         }
         
-        link.send(200, result);
+        callback(null, result);
     });
 }
 
 exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
+exports.getMergeTemplates = getMergeTemplates;

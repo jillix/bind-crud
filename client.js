@@ -4,6 +4,31 @@ var methods = ['find','remove','update','insert'];
 // cache templates
 var templateCache = {};
 
+function extendTemplateSchemas (templates, callback) {
+    
+    // TODO get linked templatet and merge schema field with linked field schema config
+    for (var template in templates) {
+        for (var field in templates[template].schema) {
+            if (templates[template].schema[field].link && templates[template].schema[field].fields) {
+                
+                // hide link field
+                templates[template].schema[field].hidden = true;
+                
+                for (var linkedField in templates[template].schema[field].fields) {
+                    
+                    // don't search on linked fields
+                    // TODO: searching in linked fields could be a feature of bind-crud
+                    templates[template].schema[field].fields[linkedField].noSearch = true;
+                    
+                    templates[template].schema[field + '.' + linkedField] = templates[template].schema[field].fields[linkedField];
+                }
+            }
+        }
+    }
+    
+    callback(null, templates);
+}
+
 // TODO callback buffering
 function templateHandler (templates, callback) {
     var self = this;
@@ -32,13 +57,15 @@ function templateHandler (templates, callback) {
             
             // merge fetched templates into result templates
             for (var template in templates) {
-               templateCache[template] = resultTemplates[template] = templates[template];
+                templateCache[template] = resultTemplates[template] = templates[template];
             }
             
-            callback(null, resultTemplates);
+            // exend schema fields with linked schemas 
+            extendTemplateSchemas(resultTemplates, callback);
         });
     } else {
-        callback(null, resultTemplates);
+        // exend schema fields with linked schemas 
+        extendTemplateSchemas(resultTemplates, callback);
     }
 };
 
