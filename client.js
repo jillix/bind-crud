@@ -82,7 +82,7 @@ function init (config) {
             fields: {
                 _id: 0,
                 'role.name': 1,
-                'role.access': 0,
+                'access': 1,
                 'tp.collection': 1,
                 'tp.name': 1
             }

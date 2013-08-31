@@ -64,6 +64,7 @@ exports.find = function (link, dbReq, callback) {
         // #2 send result
         console.log(dbReq.query);
         console.log(dbReq.options);
+        console.log(dbReq.joints);
         
         response(link, err, cursor, callback);
     });

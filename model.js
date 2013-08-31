@@ -151,7 +151,7 @@ function createJoints (request, callback) {
                     linkedTemplatesToLoad[schema[field].link][returnField.substr(field.length + 1)] = 1;
                     
                     returnFields[field] = 1;
-                    returnFields[returnField] = undefined;
+                    returnFields[returnField] = null;
                 }
             }
         } else {
@@ -163,6 +163,18 @@ function createJoints (request, callback) {
             // get templates that must be loaded
             linkedTemplatesToLoad[schema[field].link] = {};
         }
+    }
+    
+    // remove fields that point to linked documents
+    if (returnFields) {
+        var rtrnFlds = {};
+        for (var returnField in returnFields) {
+            if (returnField === '_id' || returnFields[returnField]) {
+                rtrnFlds[returnField] = returnFields[returnField];
+            }
+        }
+        
+        request.options.fields = rtrnFlds;
     }
     
     // get linked schema
