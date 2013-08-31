@@ -108,12 +108,12 @@ function recursiveConvert(obj, all) {
     }
 }
 
-// collect return fields and linked schemas
-function setRetunFields (request, callback) {
+// create request objects for merge data
+function createJoints (request, callback) {
     
     // check callback
     if (typeof callback !== 'function') {
-        return;
+        throw new Error('getMergeRequests: callback is mandatory');
     }
     
     // check if schema paths are available
@@ -134,12 +134,12 @@ function setRetunFields (request, callback) {
         
         if (returnFields) {
             for (var returnField in returnFields) {
-                if (returnField.indexOf(field) === 0) {
+                if (returnFields[returnField] && returnField.indexOf(field) === 0) {
                     
-                    console.log('found a link in field "'+ field + '" ("' + returnField + '") and points to template "' + schema[field].link + '"');
+                    //console.log('found a link in field "'+ field + '" ("' + returnField + '") and points to template "' + schema[field].link + '"');
                     
                     // collect fields who contain a link
-                    linkedFieldsToLoad[field] = 1;
+                    linkedFieldsToLoad[field] = schema[field].link;
                     ++linkedFieldsToLoad.length;
                     
                     // get templates that must be loaded and save the cropped
@@ -149,12 +149,15 @@ function setRetunFields (request, callback) {
                     }
                     
                     linkedTemplatesToLoad[schema[field].link][returnField.substr(field.length + 1)] = 1;
+                    
+                    returnFields[field] = 1;
+                    returnFields[returnField] = undefined;
                 }
             }
         } else {
             
             // collect fields who contain a link
-            linkedFieldsToLoad[field] = 1;
+            linkedFieldsToLoad[field] = schema[field].link;
             ++linkedFieldsToLoad.length;
             
             // get templates that must be loaded
@@ -172,25 +175,38 @@ function setRetunFields (request, callback) {
         }
         
         // get templates
-        templates.getTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
+        templates.getMergeTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
             
             if (err) {
                 return callback(err);
             }
             
-            // TODO check if the returnFields are in the linked schemas
-            console.log('schemas fetched');
-            console.log(linkedTemplatesToLoad);
-            console.log(fetchedTemplates);
+            // create request for linked template
+            var mergeRequests = {};
+            for (var fetchedTemplate in fetchedTemplates) {
+                
+                // create merge request
+                mergeRequests[fetchedTemplate] = {
+                    role: request.role,
+                    options: {
+                        fields: linkedTemplatesToLoad[fetchedTemplate]
+                    },
+                    template: fetchedTemplates[fetchedTemplate],
+                    query: {
+                        _id: {$in: []}
+                    }
+                };
+                
+                // take limit from request
+                if (request.options.limit) {
+                    mergeRequests[fetchedTemplate].options.limit = request.options.limit;
+                }
+            }
             
-            // TODO query and merge data
-            // #1 find data in template
-            // ---- loop in linked templates
-            // #2 create query for linked data
-            // #3 merge linked data in result data
-            // ---- loop end
-            // #4 send result
+            callback(null, mergeRequests);
         });
+    } else {
+        callback();
     }
 }
 
@@ -214,25 +230,33 @@ module.exports = function (method, link) {
             return link.send(err.statusCode || 500, err.message);
         }
         
-        setRetunFields(request, function (err, data) {
-            console.log(err, data);
+        createJoints(request, function (err, joints) {
+            
+            if (err) {
+                return link.send(err.statusCode || 500, err.message);
+            }
+            
+            // add joints to request
+            if (joints) {
+                request.joints = joints;
+            }
+            
+            try {
+                recursiveConvert(request.query);
+            } catch (err) {
+                return link.send(400, 'Incorrect ObjectId format');
+            }
+    
+            // we must add additional query filters if we request templates
+            // (this protects core templates from non super-admin users)
+            if (request.query._tp.toString() === TTID.toString()) {
+                request.query._id = {
+                    $nin: [TTID, RTID, LTID]
+                };
+            }
+    
+            // do input/output
+            io[method](link, request);
         });
-        
-        try {
-            recursiveConvert(request.query);
-        } catch (err) {
-            return link.send(400, 'Incorrect ObjectId format');
-        }
-
-        // we must add additional query filters if we request teamplates
-        // (this protects core templates from non super-admin users)
-        if (request.query._tp.toString() === TTID.toString()) {
-            request.query._id = {
-                $nin: [TTID, RTID, LTID]
-            };
-        }
-
-        // do input/output
-        //io[method](link, request);
     });
 };

@@ -76,12 +76,13 @@ function init (config) {
     
     var crud = {
         t: '000000000000000000000001',
-        q: {},
+        q: {_id: {$exists: true}},
         o: {
+            limit: 8,
             fields: {
                 _id: 0,
                 'role.name': 1,
-                'role.access': 1,
+                'role.access': 0,
                 'tp.collection': 1,
                 'tp.name': 1
             }

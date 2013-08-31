@@ -13,7 +13,6 @@ var config = {
         db: {type: 'string', required: true},
         collection: {type: 'string', required: true},
         name: {type: 'string', required: true},
-        roles: {type: 'object', required: true},
         schema: {type: 'object', required: true}
     }
 };
@@ -256,6 +255,18 @@ function getTemplate (request, callback) {
     });
 }
 
+function getMergeTemplates (templates, role, callback) {
+
+    fetchTemplatesFromDb(templates, role, {}, function (err, templates) {
+
+        if (err) {
+            return callback(err);
+        }
+        
+        callback(null, templates);
+    });
+}
+
 // TODO add more core templates here when necessary
 var CORE_TMPL_RE = new RegExp('00000000000000000000000(0|1|2)');
 
@@ -302,3 +313,4 @@ function getTemplates (templates, role, callback) {
 
 exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
+exports.getMergeTemplates = getMergeTemplates;

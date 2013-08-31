@@ -55,9 +55,16 @@ function hasAccess (link, req, access) {
 
 // read
 exports.find = function (link, dbReq, callback) {
+    
     if (!hasAccess(link, dbReq, 1)) { return link.send(403, "Access denied."); }
 
     dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
+        
+        // #1 merge linked data in result data
+        // #2 send result
+        console.log(dbReq.query);
+        console.log(dbReq.options);
+        
         response(link, err, cursor, callback);
     });
 };
