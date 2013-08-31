@@ -137,8 +137,6 @@ function createJoints (request, callback) {
             for (var returnField in returnFields) {
                 if (returnFields[returnField] && returnField.indexOf(field) === 0) {
                     
-                    //console.log('found a link in field "'+ field + '" ("' + returnField + '") and points to template "' + schema[field].link + '"');
-                    
                     // collect fields who contain a link
                     linkedFieldsToLoad[field] = schema[field].link;
                     linksExists = true;

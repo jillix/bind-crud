@@ -279,9 +279,8 @@ function getTemplates (templates, role, callback) {
         if (err) {
             return callback(err);
         }
-
+        
         var result = {};
-
         for (var id in templates) {
             // if this is a core template
             if (CORE_TMPL_RE.test(id) && templates[id].roles) {
@@ -291,7 +290,7 @@ function getTemplates (templates, role, callback) {
                     continue;
                 }
             }
-
+            
             result[id] = {
                 id: templates[id]._id,
                 //name: templates[id].name,
