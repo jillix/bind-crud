@@ -74,27 +74,8 @@ function setupListen (listen) {
 function init (config) {
     var self = this;
     
-    var crud = {
-        t: '000000000000000000000001',
-        q: {_id: {$exists: true}},
-        o: {
-            limit: 8,
-            fields: {
-                _id: 0,
-                'role.name': 1,
-                'access': 1,
-                'tp.collection': 1,
-                'tp.name': 1
-            }
-        }
-    };
-    
-    self.link('find', {data: crud}, function (err, data) {
-        err ? console.error(err) : console.log(data);
-    });
-    
     // listen to crud events
-    //setupListen.call(self, config.listen);
+    setupListen.call(self, config.listen);
 
     self.emit('ready');
 }

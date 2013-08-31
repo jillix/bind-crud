@@ -84,6 +84,13 @@ function jointResponse (link, dbReq, cursor, callback) {
                         for (var i = 0, l = result.length; i < l; ++i) {
                             for (var field in jointDbReq.merge) {
                                 if (result[i][field]) {
+                                    
+                                    // set and emtpy object if no jointResults are found
+                                    if (jointResult.length === 0) {
+                                        result[i][field] = {};
+                                        continue;
+                                    }
+                                    
                                     for (var ii = 0, ll = jointResult.length; i < l; ++i) {
                                         // find id in joint results
                                         if (jointResult[ii]._id.toString() === result[i][field].toString()) {
