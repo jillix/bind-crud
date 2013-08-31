@@ -123,8 +123,9 @@ function createJoints (request, callback) {
     
     var schema = request.template.schema.paths;
     var returnFields = request.options && request.options.fields ? request.options.fields : null;
-    var linkedFieldsToLoad = {length: 0};
+    var linkedFieldsToLoad = {};
     var linkedTemplatesToLoad = {};
+    var linksExists = false;
     
     // check if a return field points to a linked document
     for (var field in schema) {
@@ -140,15 +141,19 @@ function createJoints (request, callback) {
                     
                     // collect fields who contain a link
                     linkedFieldsToLoad[field] = schema[field].link;
-                    ++linkedFieldsToLoad.length;
+                    linksExists = true;
                     
                     // get templates that must be loaded and save the cropped
                     // schema paths to validate field in linked schema
                     if (!linkedTemplatesToLoad[schema[field].link]) {
-                        linkedTemplatesToLoad[schema[field].link] = {};
+                        linkedTemplatesToLoad[schema[field].link] = {
+                            fields: {},
+                            merge: {}
+                        };
                     }
                     
-                    linkedTemplatesToLoad[schema[field].link][returnField.substr(field.length + 1)] = 1;
+                    linkedTemplatesToLoad[schema[field].link].fields[returnField.substr(field.length + 1)] = 1;
+                    linkedTemplatesToLoad[schema[field].link].merge[field] = 1;
                     
                     returnFields[field] = 1;
                     returnFields[returnField] = null;
@@ -158,10 +163,18 @@ function createJoints (request, callback) {
             
             // collect fields who contain a link
             linkedFieldsToLoad[field] = schema[field].link;
-            ++linkedFieldsToLoad.length;
+            linksExists = true;
+            
+            if (!linkedTemplatesToLoad[schema[field].link]) {
+                linkedTemplatesToLoad[schema[field].link] = {
+                    fields: {},
+                    merge: {}
+                };
+            }
             
             // get templates that must be loaded
-            linkedTemplatesToLoad[schema[field].link] = {};
+            linkedTemplatesToLoad[schema[field].link].fields = {};
+            linkedTemplatesToLoad[schema[field].link].merge[field] = 1;
         }
     }
     
@@ -178,7 +191,7 @@ function createJoints (request, callback) {
     }
     
     // get linked schema
-    if (linkedFieldsToLoad.length > 0) {
+    if (linksExists) {
         
         // convert linked tempaltes object to an array
         var linkedTemplatesToLoad_array = [];
@@ -195,27 +208,34 @@ function createJoints (request, callback) {
             
             // create request for linked template
             var mergeRequests = {};
+            var length = 0;
             for (var fetchedTemplate in fetchedTemplates) {
                 
                 // create merge request
                 mergeRequests[fetchedTemplate] = {
                     role: request.role,
                     options: {
-                        fields: linkedTemplatesToLoad[fetchedTemplate]
+                        fields: linkedTemplatesToLoad[fetchedTemplate].fields
                     },
                     template: fetchedTemplates[fetchedTemplate],
-                    query: {
-                        _id: {$in: []}
-                    }
+                    query: {},
+                    merge: linkedTemplatesToLoad[fetchedTemplate].merge
                 };
+                
+                // make sure _id gets always returned
+                if (returnFields) {
+                    request.options.fields._id = 1;
+                }
                 
                 // take limit from request
                 if (request.options.limit) {
                     mergeRequests[fetchedTemplate].options.limit = request.options.limit;
                 }
+                
+                ++length;
             }
             
-            callback(null, mergeRequests);
+            callback(null, mergeRequests, length);
         });
     } else {
         callback();
@@ -242,7 +262,7 @@ module.exports = function (method, link) {
             return link.send(err.statusCode || 500, err.message);
         }
         
-        createJoints(request, function (err, joints) {
+        createJoints(request, function (err, joints, length) {
             
             if (err) {
                 return link.send(err.statusCode || 500, err.message);
@@ -251,6 +271,7 @@ module.exports = function (method, link) {
             // add joints to request
             if (joints) {
                 request.joints = joints;
+                request.jointsLength = length;
             }
             
             try {
