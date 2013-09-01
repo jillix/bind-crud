@@ -84,28 +84,6 @@ function initAndCache (template) {
         required: true
     };
     
-    // add roles from template._ln
-    /*template.roles = {};
-    if (template._ln) {
-        for (var i = 0; i < template._ln.length; ++i) {
-            var currentRole = template._ln[i];
-            if (currentRole._tp.toString() === config.roleTemplateId.toString()) {
-                template.roles[currentRole._id] = currentRole.access;
-            }
-        }
-    }*/
-
-    // add mandatory field _ln
-    /*if (!template.schema._ln) {
-        template.schema._ln = [{}];
-    }*/
-    
-    // add mandatory field _ln._tp
-    //template.schema._ln[0]._tp = 'objectid';
-    
-    // add mandatory field _ln._id
-    //template.schema._ln[0]._id = 'objectid';
-    
     template.schema = new modm.Schema(template.schema);
     template.collection = template.model(template.collection, template.schema);
     return templateCache[template._id] = template;
@@ -156,13 +134,8 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
         var templates = tpls.query;
         resultTemplates = tpls.cached;
         
-        // check if role has write access
-        /*dbReq.query._ln = {
-            $elemMatch: {
-                _tp: config.roleTemplateId,
-                _id: role
-            }
-        };*/
+        // check if role has access
+        dbReq.query['roles.' + role] = {$gt: 0};
         
         if (templates.length > 1) {
             

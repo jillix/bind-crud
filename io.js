@@ -134,13 +134,9 @@ function hasAccess (link, req, access) {
 exports.find = function (link, dbReq, callback) {
     
     if (!hasAccess(link, dbReq, 1)) { return link.send(403, "Access denied."); }
-
+    
+    // get data and count
     dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
-
-        // why do we need options for count?
-        //var countOptions = JSON.parse(JSON.stringify(dbReq.options));
-        //delete countOptions.limit;
-
         dbReq.template.collection.count(dbReq.query, function (countErr, count) {
             
             if (link && !countErr) {

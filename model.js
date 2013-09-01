@@ -28,15 +28,9 @@ function createRequest (method, link) {
     
     // check access for template items when querying templates
     // TODO make the objectid strings configurable
-    /*if (data.t === TTID.toString()) {
-        request.query._ln = {
-            $elemMatch: {
-                _tp: RTID,
-                _id: request.role,
-                access: { $gt: 0 }
-            }
-        };
-    }*/
+    if (data.t === TTID.toString()) {
+        request.query['roles.' + request.role] = { $gt: 0 };
+    }
     
     // update
     if (data.d && data.d.constructor.name === 'Object') {
