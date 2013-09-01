@@ -69,12 +69,22 @@ function templateHandler (templates, callback) {
     }
 };
 
+var miidCache = {};
+
 function setupListen (listen) {
     var self = this;
     
     // listen to crud events
     if (listen instanceof Array) {
         for (var i = 0, l = listen.length; i < l; ++i) {
+            
+            // skip if crud already listen
+            if (miidCache[listen[i]]) {
+                continue;
+            }
+            
+            miidCache[listen[i]] = 1;
+            
             for (var ii = 0, ll = methods.length; ii < ll; ++ii) {
                 self.on(methods[ii], listen[i], (function (method) {    
                     return function (data, callback) {
