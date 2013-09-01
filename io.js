@@ -137,11 +137,11 @@ exports.find = function (link, dbReq, callback) {
 
     dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
 
-        var countOptions = JSON.parse(JSON.stringify(dbReq.options));
-        
-        delete countOptions.limit;
+        // why do we need options for count?
+        //var countOptions = JSON.parse(JSON.stringify(dbReq.options));
+        //delete countOptions.limit;
 
-        dbReq.template.collection.count(dbReq.query, countOptions, function (countErr, count) {
+        dbReq.template.collection.count(dbReq.query, function (countErr, count) {
             
             if (link && !countErr) {
                 link.res.headers['X-Mono-CRUD-Count'] = count.toString();
