@@ -19,7 +19,9 @@ function createRequest (method, link) {
     var request = {
         role: link.session.crudRole,
         options: {},
-        templateId: data.t
+        templateId: data.t,
+        // TODO remove this when updates on linked fields are possible
+        noJoins: data.noJoins
     };
     
     // query
@@ -104,6 +106,11 @@ function recursiveConvert(obj, all) {
 
 // create request objects for merge data
 function createJoints (request, callback) {
+    
+    // TODO remove this when updates on linked fields are possible
+    if (request.noJoins) {
+        return callback();
+    }
     
     // check callback
     if (typeof callback !== 'function') {
@@ -246,7 +253,7 @@ module.exports = function (method, link) {
     if (!request) {
         return link.send(400, 'Bad request.');
     }
-
+    
     // get template (cache)
     templates.getTemplate(request, function (err, request) {
 
