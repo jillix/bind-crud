@@ -6,7 +6,6 @@ var TTID = ObjectId('000000000000000000000000');
 var RTID = ObjectId('000000000000000000000001');
 var LTID = ObjectId('000000000000000000000002');
 
-
 function createRequest (method, link) {
 
     var data = link.data || {};
@@ -60,12 +59,13 @@ function createRequest (method, link) {
 
 var CORE_KEY_REGEXP = new RegExp(/^(_ln\.)?(_id|_tp)$/);
 
-function recursiveConvert(obj, all) {
-
+// TODO respect schema types
+function recursiveConvert(paths, obj, all) {
+    
     // if array of objects (array )
     if (obj.constructor.name === 'Array') {
         for (var i in obj) {
-            recursiveConvert(obj[i], all);
+            recursiveConvert(paths, obj[i], all);
         }
         return;
     }
@@ -78,9 +78,9 @@ function recursiveConvert(obj, all) {
             }
 
             // are we talking business here?
-            var isMatch = CORE_KEY_REGEXP.test(key) || all;
-
-            if (typeof obj[key] === 'string' && isMatch) {
+            //var isMatch = CORE_KEY_REGEXP.test(key) || all;
+            
+            if (paths[key] && paths[key].type === 'objectid') {
                 obj[key] = ObjectId(obj[key]);
                 continue;
             }
@@ -88,7 +88,7 @@ function recursiveConvert(obj, all) {
             // treat array here in order not to loose the reference
             if (obj[key].constructor.name === 'Array') {
                 if (typeof obj[key][0] === 'object') {
-                    recursiveConvert(obj[key], isMatch);
+                    recursiveConvert(paths, obj[key], isMatch);
                 } else if (isMatch) {
                     for (var i in obj[key]) {
                         obj[key][i] = ObjectId(obj[key][i]);
@@ -98,7 +98,7 @@ function recursiveConvert(obj, all) {
             }
 
             if (typeof obj[key] === 'object') {
-                recursiveConvert(obj[key], isMatch);
+                recursiveConvert(paths, obj[key], isMatch);
             }
         }
     }
@@ -274,7 +274,7 @@ module.exports = function (method, link) {
             }
             
             try {
-                recursiveConvert(request.query);
+                recursiveConvert(request.template.schema.paths, request.query);
             } catch (err) {
                 return link.send(400, 'Incorrect ObjectId format');
             }
