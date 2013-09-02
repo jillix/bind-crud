@@ -85,9 +85,11 @@ function recursiveConvert(paths, obj) {
             if (obj[key].constructor.name === 'Array') {
                 if (typeof obj[key][0] === 'object') {
                     recursiveConvert(paths, obj[key]);
-                } else if (paths[key] && paths[key].type === 'objectid') {
+                } else {
                     for (var i in obj[key]) {
-                        obj[key][i] = ObjectId(obj[key][i]);
+                        if (paths[key][i].type === 'objectid') {
+                            obj[key][i] = ObjectId(obj[key][i]);
+                        }
                     }
                 }
                 continue;
