@@ -59,13 +59,12 @@ function createRequest (method, link) {
 
 var CORE_KEY_REGEXP = new RegExp(/^(_ln\.)?(_id|_tp)$/);
 
-// TODO respect schema types
-function recursiveConvert(paths, obj, all) {
+function recursiveConvert(paths, obj) {
     
     // if array of objects (array )
     if (obj.constructor.name === 'Array') {
         for (var i in obj) {
-            recursiveConvert(paths, obj[i], all);
+            recursiveConvert(paths, obj[i]);
         }
         return;
     }
@@ -77,9 +76,6 @@ function recursiveConvert(paths, obj, all) {
                 continue;
             }
 
-            // are we talking business here?
-            //var isMatch = CORE_KEY_REGEXP.test(key) || all;
-            
             if (paths[key] && paths[key].type === 'objectid') {
                 obj[key] = ObjectId(obj[key]);
                 continue;
@@ -88,8 +84,8 @@ function recursiveConvert(paths, obj, all) {
             // treat array here in order not to loose the reference
             if (obj[key].constructor.name === 'Array') {
                 if (typeof obj[key][0] === 'object') {
-                    recursiveConvert(paths, obj[key], isMatch);
-                } else if (isMatch) {
+                    recursiveConvert(paths, obj[key]);
+                } else if (paths[key] && paths[key].type === 'objectid') {
                     for (var i in obj[key]) {
                         obj[key][i] = ObjectId(obj[key][i]);
                     }
@@ -98,7 +94,7 @@ function recursiveConvert(paths, obj, all) {
             }
 
             if (typeof obj[key] === 'object') {
-                recursiveConvert(paths, obj[key], isMatch);
+                recursiveConvert(paths, obj[key]);
             }
         }
     }

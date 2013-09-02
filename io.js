@@ -80,23 +80,26 @@ function jointResponse (link, dbReq, cursor, callback) {
                             return ++current;
                         }
                         
+                        // create joint object
+                        var jointData = {};
+                        for (var i = 0, l = jointResult.length; i < l; ++i) {
+                            jointData[jointResult[i]._id] = jointResult[i];
+                        }
+                        
                         // merge linkd data
                         for (var i = 0, l = result.length; i < l; ++i) {
                             for (var field in jointDbReq.merge) {
+                                
                                 if (result[i][field]) {
                                     
                                     // set and emtpy object if no jointResults are found
                                     if (jointResult.length === 0) {
                                         result[i][field] = {};
-                                        continue;
-                                    }
-                                    
-                                    for (var ii = 0, ll = jointResult.length; i < l; ++i) {
-                                        // find id in joint results
-                                        if (jointResult[ii]._id.toString() === result[i][field].toString()) {
-                                            // merge linked data in result field
-                                            result[i][field] = jointResult[ii];
-                                        }
+                                        
+                                    // find id in joint results
+                                    } else if (jointData[result[i][field]] && jointData[result[i][field]]._id.toString() === result[i][field].toString()) {
+                                        // merge linked data in result field
+                                        result[i][field] = jointData[result[i][field]];
                                     }
                                 }
                             }
