@@ -1,7 +1,7 @@
 {
     "source": "github",
     "owner": "jillix",
-    "name": "bind-crud",
+    "name": "crud",
     "dependencies": [
         "/client.js"
     ],
