@@ -1,4 +1,4 @@
-M.wrap('github/jillix/bind-crud/dev/client.js', function (require, module, exports) {
+M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
 var methods = ['find','remove','update','insert'];
 
 // cache templates
