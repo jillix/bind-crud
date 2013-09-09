@@ -283,6 +283,8 @@ function getTemplates (templates, role, callback) {
     });
 }
 
+M.on('crud_getTemplate', getTemplate);
+
 exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
 exports.getMergeTemplates = getMergeTemplates;
