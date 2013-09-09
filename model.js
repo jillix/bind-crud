@@ -59,12 +59,12 @@ function createRequest (method, link) {
 
 var CORE_KEY_REGEXP = new RegExp(/^(_ln\.)?(_id|_tp)$/);
 
-function recursiveConvert(paths, obj) {
+function recursiveConvert(paths, obj, keyPath) {
     
     // if array of objects (array )
     if (obj.constructor.name === 'Array') {
         for (var i in obj) {
-            recursiveConvert(paths, obj[i]);
+            recursiveConvert(paths, obj[i], keyPath);
         }
         return;
     }
@@ -72,11 +72,13 @@ function recursiveConvert(paths, obj) {
     // if object
     if (typeof obj === 'object' && obj.constructor.name.toLowerCase() !== 'objectid') {
         for (var key in obj) {
+            var newKeyPath = keyPath + (key[0] === '$' ? '' : (keyPath ? '.' : '') + key);
+
             if (obj[key] === null || obj[key] === undefined) {
                 continue;
             }
 
-            if (paths[key] && paths[key].type === 'objectid') {
+            if (paths[newKeyPath] && paths[newKeyPath].type === 'objectid') {
                 obj[key] = ObjectId(obj[key]);
                 continue;
             }
@@ -84,10 +86,10 @@ function recursiveConvert(paths, obj) {
             // treat array here in order not to loose the reference
             if (obj[key].constructor.name === 'Array') {
                 if (typeof obj[key][0] === 'object') {
-                    recursiveConvert(paths, obj[key]);
+                    recursiveConvert(paths, obj[key], newKeyPath);
                 } else {
                     for (var i in obj[key]) {
-                        if (paths[key][i].type === 'objectid') {
+                        if (paths[newKeyPath] && paths[newKeyPath].type === 'objectid') {
                             obj[key][i] = ObjectId(obj[key][i]);
                         }
                     }
@@ -96,7 +98,7 @@ function recursiveConvert(paths, obj) {
             }
 
             if (typeof obj[key] === 'object') {
-                recursiveConvert(paths, obj[key]);
+                recursiveConvert(paths, obj[key], newKeyPath);
             }
         }
     }
@@ -272,7 +274,7 @@ module.exports = function (method, link) {
             }
             
             try {
-                recursiveConvert(request.template.schema.paths, request.query);
+                recursiveConvert(request.template.schema.paths, request.query, '');
             } catch (err) {
                 return link.send(400, 'Incorrect ObjectId format');
             }
