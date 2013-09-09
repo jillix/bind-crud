@@ -1,5 +1,5 @@
-bind-crud
-=========
+crud
+====
 
 CRUD for mono
 
