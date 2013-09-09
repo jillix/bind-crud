@@ -276,6 +276,13 @@ module.exports = function (method, link) {
             } catch (err) {
                 return link.send(400, 'Incorrect ObjectId format');
             }
+
+            // TODO This is a hack until we can merge the templates
+            if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
+                var copy = request.template.addToTemplates.slice();
+                copy.push(request.data._tp);
+                request.data._tp = copy;
+            }
     
             // we must add additional query filters if we request templates
             // (this protects core templates from non super-admin users)
