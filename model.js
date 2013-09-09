@@ -291,6 +291,15 @@ module.exports = function (method, link) {
                     $nin: [TTID, RTID, LTID]
                 };
             }
+            
+            // emit a server event
+            if (request.template.on && request.template.on[method]) {
+                for (var event in request.template.on[method]) {
+                    var copy = request.template.on[method][event].slice();
+                    copy.splice(0, 0, event, request);
+                    M.emit.apply(M, copy);
+                }
+            }
     
             // do input/output
             io[method](link, request);
