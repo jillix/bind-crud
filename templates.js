@@ -13,7 +13,10 @@ var config = {
         db: {type: 'string', required: true},
         collection: {type: 'string', required: true},
         name: {type: 'string', required: true},
-        schema: {type: 'object', required: true}
+        roles: {type: 'object', required: true},
+        schema: {type: 'object', required: true},
+        label: {type: 'string'},
+        links: {type: 'array'}
     }
 };
 
