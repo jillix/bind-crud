@@ -16,7 +16,8 @@ var config = {
         roles: {type: 'object', required: true},
         schema: {type: 'object', required: true},
         label: {type: 'string'},
-        links: {type: 'array'}
+        links: {type: 'array'},
+        options: {type: 'object'}
     }
 };
 
