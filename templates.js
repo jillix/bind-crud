@@ -277,8 +277,9 @@ function getTemplates (templates, role, callback) {
             // let the UI template information go through
             var uiElems = ['label', 'html', 'filters', 'sort', 'links'];
             for (var i in uiElems) {
-                if (templates[id][uiElems[i]]) {
-                    result[id][uiElems[i]] = templates[id][uiElems[i]];
+                if ((templates[id].options || {})[uiElems[i]]) {
+                    result[id].options = result[id].options || {};
+                    result[id].options[uiElems[i]] = templates[id].options[uiElems[i]];
                 }
             }
         }
