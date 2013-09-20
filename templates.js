@@ -275,13 +275,14 @@ function getTemplates (templates, role, callback) {
             };
 
             // let the UI template information go through
-            var uiElems = ['label', 'html', 'filters', 'sort', 'links'];
+            var uiElems = ['label', 'html', 'filters', 'sort'];
             for (var i in uiElems) {
                 if ((templates[id].options || {})[uiElems[i]]) {
                     result[id].options = result[id].options || {};
                     result[id].options[uiElems[i]] = templates[id].options[uiElems[i]];
                 }
             }
+            result[id].links = templates[id].links;
         }
         
         callback(null, result);
