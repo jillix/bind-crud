@@ -10,6 +10,7 @@ var config = {
     templateSchema: {
         _id: {type: 'objectid'},
         _tp: {type: 'objectid', required: true},
+        _li: {type: 'array'},
         db: {type: 'string', required: true},
         collection: {type: 'string', required: true},
         name: {type: 'string', required: true},
