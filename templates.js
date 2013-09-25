@@ -34,11 +34,18 @@ var templateCache = {
         db: config.dbName,
         collection: config.templateColName,
         schema: templateSchema,
+        roles: {
+            '*': {
+                access: 'r'
+            }
+        },
         model: modm(config.dbName, {
             server: {pooSize: 3},
             db: {w: 1}
         })
     }
+    
+    // TODO move all core tempaltes to crud module
 };
 // init collection
 templateCache[config.templateId].collection = templateCache[config.templateId].model(config.templateColName, templateSchema);
@@ -51,19 +58,33 @@ function ObjectId (id) {
     }
 }
 
+function getAccessKey (method) {
+    switch (method) {
+        case 'find':
+            return 'r';
+        case 'update':
+            return 'u';
+        case 'insert':
+            return 'c';
+        case 'remove':
+            return 'd';
+    }
+}
+
 // check access
-function checkAccess (template, role, access) {
+function checkAccess (template, role, method) {
     
-    // grant access for templates without roles
-    if (!template.roles) {
+    // grant access for templates without roles or for the role wildcard
+    if (!template.roles || (template.roles['*'] && typeof template.roles['*'].access === 'string' && template.roles['*'].access.indexOf('r') > -1)) {
         return true;
     }
     
-    if (template.roles[role] < access) {
-        return false;
+    // check if role has read rights
+    if (template.roles[role] && typeof template.roles[role].access === 'string' && template.roles[role].access.indexOf(getAccessKey(method)) > -1) {
+        return true;
     }
     
-    return true;
+    return false;
 }
 
 function initAndCache (template) {
@@ -94,7 +115,7 @@ function initAndCache (template) {
     return templateCache[template._id] = template;
 }
 
-function getCachedTemplates (templates, role) {
+function getCachedTemplates (templates, role, method) {
     
     if (!templates || templates.length === 0) {
         return;
@@ -108,7 +129,7 @@ function getCachedTemplates (templates, role) {
         // check cached templates
         for (var i = 0, l = templates.length; i < l; ++i) {
             // add to result if role has access
-            if (templateCache[templates[i]] && checkAccess(templateCache[templates[i]], role, 1)) {
+            if (templateCache[templates[i]] && checkAccess(templateCache[templates[i]], role, method)) {
                 resultTemplates[templates[i]] = templateCache[templates[i]];
             } else if (!addedTemplates[templates[i]]) {
                 addedTemplates[templates[i]] = true;
@@ -123,15 +144,18 @@ function getCachedTemplates (templates, role) {
     }
 }
 
-function fetchTemplatesFromDb (templates, role, fields, callback) {
+function fetchTemplatesFromDb (templates, role, fields, method, callback) {
     
-    var tpls = getCachedTemplates(templates, role);
+    var tpls = getCachedTemplates(templates, role, method);
     var resultTemplates = {};
     
     // build query
     var dbReq = {
         query: {_tp: config.templateId},
-        options: {fields: fields || {}},
+        options: {
+            fields: fields || {},
+            limit: templates.length
+        },
         template: templateCache[config.templateId]
     };
     
@@ -139,8 +163,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
         var templates = tpls.query;
         resultTemplates = tpls.cached;
         
-        // check if role has access
-        dbReq.query['roles.' + role] = {$gt: 0};
+        dbReq.query['roles.' + role + '.access'] = {$regex: getAccessKey(method)};
         
         if (templates.length > 1) {
             
@@ -171,6 +194,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
     }
     
     if (!tpls || tpls.query.length > 0) {
+        
         io.find(null, dbReq, function (err, cursor) {
 
             if (err) {
@@ -214,7 +238,7 @@ function fetchTemplatesFromDb (templates, role, fields, callback) {
 
 function getTemplate (request, callback) {
 
-    fetchTemplatesFromDb([request.templateId], request.role, {}, function (err, template) {
+    fetchTemplatesFromDb([request.templateId], request.role, {}, request.method, function (err, template) {
         
         if (err) {
             err.statusCode = err.statusCode || 500;
@@ -224,7 +248,7 @@ function getTemplate (request, callback) {
         request.template = template[request.templateId];
         
         if (!request.template) {
-            err = new Error('Bad template object.');
+            err = new Error('No right to access template ' + request.templateId + ' with the "' + request.method + '" method.');
             err.statusCode = 500;
             return callback(err);
         }
@@ -235,7 +259,7 @@ function getTemplate (request, callback) {
 
 function getMergeTemplates (templates, role, callback) {
 
-    fetchTemplatesFromDb(templates, role, {}, function (err, templates) {
+    fetchTemplatesFromDb(templates, role, {}, 'find', function (err, templates) {
 
         if (err) {
             return callback(err);
@@ -245,14 +269,11 @@ function getMergeTemplates (templates, role, callback) {
     });
 }
 
-// TODO add more core templates here when necessary
-// var CORE_TMPL_RE = new RegExp('00000000000000000000000(0|1|2)');
-
 function getTemplates (templates, role, callback) {
     
     var myRoleString = role ? role.toString() : '';
-
-    fetchTemplatesFromDb(templates, role, {}, function (err, templates) {
+    
+    fetchTemplatesFromDb(templates, role, {}, 'find', function (err, templates) {
 
         if (err) {
             return callback(err);
@@ -260,16 +281,6 @@ function getTemplates (templates, role, callback) {
         
         var result = {};
         for (var id in templates) {
-            
-            // TOOD handle this security problem with issue #4
-            // if this is a core template
-            /*if (CORE_TMPL_RE.test(id) && templates[id].roles) {
-                // do not return templates for users that cannot modify them
-                // (only super-admins will have at least access 2)
-                if (templates[id].roles[myRoleString] < 2) {
-                    continue;
-                }
-            }*/
             
             result[id] = {
                 id: templates[id]._id,
