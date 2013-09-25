@@ -246,7 +246,7 @@ function getMergeTemplates (templates, role, callback) {
 }
 
 // TODO add more core templates here when necessary
-var CORE_TMPL_RE = new RegExp('00000000000000000000000(0|1|2)');
+// var CORE_TMPL_RE = new RegExp('00000000000000000000000(0|1|2)');
 
 function getTemplates (templates, role, callback) {
     
@@ -260,14 +260,16 @@ function getTemplates (templates, role, callback) {
         
         var result = {};
         for (var id in templates) {
+            
+            // TOOD handle this security problem with issue #4
             // if this is a core template
-            if (CORE_TMPL_RE.test(id) && templates[id].roles) {
+            /*if (CORE_TMPL_RE.test(id) && templates[id].roles) {
                 // do not return templates for users that cannot modify them
                 // (only super-admins will have at least access 2)
                 if (templates[id].roles[myRoleString] < 2) {
                     continue;
                 }
-            }
+            }*/
             
             result[id] = {
                 id: templates[id]._id,
