@@ -34,4 +34,39 @@ There is also a `getTemplates` event which fetches template data. Pass an array 
 ```
 
 ####Template config
-coming soon...
+```js
+myTemplate = {
+    _id: myTemplateItemId,
+    _tp: [_templateTemplateId],
+    db: 'dbName',
+    collection: 'collectionName',
+    name: 'template_name',
+    roles: {
+        // set any combination of c, r, u or d in access
+        'roleId': {access: 'crud'}
+    },
+    options: {
+        label: {
+            de: 'Template Label'
+        },
+        order: 5,
+        html: '/myTemplate.html',
+        sort: [['sort.field', 1]],
+        // a hidden fixed filter to display only the customers that are HB
+        filters: [
+            {
+                field: 'filterFIeld',
+                operator: 'exists',
+                value: true,
+                hidden: true,
+                fixed: true
+            }
+        ]
+    },
+    links: [
+        // see crud links module
+    ],
+    schema: {
+        // modm schema
+    }
+```
