@@ -59,46 +59,41 @@ function createRequest (method, link) {
 
 var CORE_KEY_REGEXP = new RegExp(/^(_ln\.)?(_id|_tp)$/);
 
-function recursiveConvert(paths, obj, keyPath) {
-    
-    // if array of objects (array )
+function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
+
+    // if array of objects
     if (obj.constructor.name === 'Array') {
         for (var i in obj) {
-            recursiveConvert(paths, obj[i], keyPath);
+            // ignore nulls
+            if (obj[i] === null) {
+                continue;
+            }
+
+            if (typeof obj[i] === 'object') {
+                recursiveConvert(paths, obj[i], keyPath, convertAllStrings);
+            } else if (paths[keyPath] && paths[keyPath].type === 'objectid'){
+                obj[i] = ObjectId(obj[i]);
+            }
         }
         return;
     }
 
     // if object
-    if (typeof obj === 'object' && obj.constructor.name.toLowerCase() !== 'objectid') {
+    if (typeof obj === 'object') {
         for (var key in obj) {
+            // ignore nulls
+            // $exists also does not need convertion of values
+            if (obj[i] === null || key === '$exists') {
+                continue;
+            }
+
             var newKeyPath = keyPath + (key[0] === '$' ? '' : (keyPath ? '.' : '') + key);
-
-            if (obj[key] === null || obj[key] === undefined) {
-                continue;
-            }
-
-            if (paths[newKeyPath] && paths[newKeyPath].type === 'objectid') {
-                obj[key] = ObjectId(obj[key]);
-                continue;
-            }
-
-            // treat array here in order not to loose the reference
-            if (obj[key].constructor.name === 'Array') {
-                if (typeof obj[key][0] === 'object') {
-                    recursiveConvert(paths, obj[key], newKeyPath);
-                } else {
-                    for (var i in obj[key]) {
-                        if (paths[newKeyPath] && paths[newKeyPath].type === 'objectid') {
-                            obj[key][i] = ObjectId(obj[key][i]);
-                        }
-                    }
-                }
-                continue;
-            }
+            var parentSaysId = paths[newKeyPath] && paths[newKeyPath].type === 'objectid';
 
             if (typeof obj[key] === 'object') {
-                recursiveConvert(paths, obj[key], newKeyPath);
+                recursiveConvert(paths, obj[key], newKeyPath, parentSaysId);
+            } else if (parentSaysId) {
+                obj[key] = ObjectId(obj[key]);
             }
         }
     }
