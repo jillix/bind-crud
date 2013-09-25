@@ -308,3 +308,4 @@ M.on('crud_getTemplate', getTemplate);
 exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
 exports.getMergeTemplates = getMergeTemplates;
+exports.getAccessKey = getAccessKey;

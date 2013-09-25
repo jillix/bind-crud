@@ -245,34 +245,10 @@ module.exports = function (method, link) {
             return link.send(err.statusCode || 500, err.message);
         }
         
-        // TODO check method access (c,r,u,d)
+        // check role access when reading templates
         if (request.template._id.toString() === '000000000000000000000000') {
-            
-            // TODO remove this
-            request.query = {_tp: request.query._tp};
-            
-            var crudAccessKey;
-            
-            switch (method) {
-                case 'find':
-                    crudAccessKey = 'r';
-                    break;
-                case 'update':
-                    crudAccessKey = 'u';
-                    break;
-                case 'insert':
-                    crudAccessKey = 'c';
-                    break;
-                case 'remove':
-                    crudAccessKey = 'd';
-                    break;
-            }
-            
-            request.query['roles.' + request.role + '.access'] = {$regex: crudAccessKey};
+            request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
         }
-        
-        // TODO update query
-        
         
         createJoints(request, function (err, joints, length) {
             
