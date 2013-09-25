@@ -69,4 +69,5 @@ myTemplate = {
     schema: {
         // modm schema
     }
+}
 ```
