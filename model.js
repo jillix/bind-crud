@@ -2,10 +2,6 @@ var io = require('./io');
 var templates = require('./templates');
 var ObjectId = require('modm').ObjectId;
 
-var TTID = ObjectId('000000000000000000000000');
-var RTID = ObjectId('000000000000000000000001');
-var LTID = ObjectId('000000000000000000000002');
-
 function createRequest (method, link) {
 
     var data = link.data || {};
@@ -19,6 +15,7 @@ function createRequest (method, link) {
         role: link.session.crudRole,
         options: {},
         templateId: data.t,
+        method: method,
         // TODO remove this when updates on linked fields are possible
         noJoins: data.noJoins
     };
@@ -26,12 +23,6 @@ function createRequest (method, link) {
     // query
     request.query = data.q || {};
     request.query._tp = data.t;
-    
-    // check access for template items when querying templates
-    // TODO make the objectid strings configurable
-    if (data.t === TTID.toString()) {
-        request.query['roles.' + request.role] = { $gt: 0 };
-    }
     
     // update
     if (data.d && data.d.constructor.name === 'Object') {
@@ -56,8 +47,6 @@ function createRequest (method, link) {
 
     return request;
 }
-
-var CORE_KEY_REGEXP = new RegExp(/^(_ln\.)?(_id|_tp)$/);
 
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 
@@ -256,6 +245,35 @@ module.exports = function (method, link) {
             return link.send(err.statusCode || 500, err.message);
         }
         
+        // TODO check method access (c,r,u,d)
+        if (request.template._id.toString() === '000000000000000000000000') {
+            
+            // TODO remove this
+            request.query = {_tp: request.query._tp};
+            
+            var crudAccessKey;
+            
+            switch (method) {
+                case 'find':
+                    crudAccessKey = 'r';
+                    break;
+                case 'update':
+                    crudAccessKey = 'u';
+                    break;
+                case 'insert':
+                    crudAccessKey = 'c';
+                    break;
+                case 'remove':
+                    crudAccessKey = 'd';
+                    break;
+            }
+            
+            request.query['roles.' + request.role + '.access'] = {$regex: crudAccessKey};
+        }
+        
+        // TODO update query
+        
+        
         createJoints(request, function (err, joints, length) {
             
             if (err) {
@@ -275,21 +293,11 @@ module.exports = function (method, link) {
             }
             
             // TODO This is a hack until we can merge the templates
-            if (request.template && (request.template.options || {}).addToTemplates && request.data && request.data._tp) {
-                var copy = request.template.options.addToTemplates.slice();
+            if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
+                var copy = request.template.addToTemplates.slice();
                 copy.push(request.data._tp);
                 request.data._tp = copy;
             }
-            
-            // TODO this is a security issue that must be fixed!
-            //      see issue: #4
-            // we must add additional query filters if we request templates
-            // (this protects core templates from non super-admin users)
-            /*if (request.query._tp.toString() === TTID.toString()) {
-                request.query._id = {
-                    $nin: [TTID, RTID, LTID]
-                };
-            }*/
             
             // emit a server event
             if (request.template.on && request.template.on[method]) {
