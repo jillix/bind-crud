@@ -32,3 +32,6 @@ There is also a `getTemplates` event which fetches template data. Pass an array 
     f: {/*fields*/}
 }
 ```
+
+####Template config
+coming soon...
