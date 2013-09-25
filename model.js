@@ -276,7 +276,7 @@ module.exports = function (method, link) {
             
             // TODO This is a hack until we can merge the templates
             if (request.template && (request.template.options || {}).addToTemplates && request.data && request.data._tp) {
-+               var copy = request.template.options.addToTemplates.slice();
+                var copy = request.template.options.addToTemplates.slice();
                 copy.push(request.data._tp);
                 request.data._tp = copy;
             }
