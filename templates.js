@@ -75,7 +75,7 @@ function getAccessKey (method) {
 function checkAccess (template, role, method) {
     
     // grant access for templates without roles or for the role wildcard
-    if (!template.roles || (template.roles['*'] && typeof template.roles['*'].access === 'string' && template.roles['*'].access.indexOf('r') > -1)) {
+    if (!template.roles || (template.roles['*'] && typeof template.roles['*'].access === 'string' && template.roles['*'].access.indexOf(getAccessKey(method)) > -1)) {
         return true;
     }
     
