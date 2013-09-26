@@ -45,6 +45,8 @@ myTemplate = {
         // set any combination of c, r, u or d in access
         'roleId': {access: 'crud'}
     },
+    // add a role with access rights to every item
+    itemAccess: 'crud',
     options: {
         label: {
             de: 'Template Label'
@@ -63,6 +65,22 @@ myTemplate = {
             }
         ]
     },
+    // plug custom code
+    on: {
+        find: {
+            myCustomEventA: [arg1, argN]
+        },
+        insert: {
+            myCustomEventB: [arg1, argN]
+        },
+        update: {
+            myCustomEventC: [arg1, argN]
+        },
+        remove: {
+            myCustomEventD: [arg1, argN]
+        }
+    }
+    
     links: [
         // see crud links module
     ],
