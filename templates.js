@@ -111,7 +111,7 @@ function initAndCache (template) {
         required: true
     };
     
-    // add mandatory field _id
+    // add mandatory field _li
     template.schema._li = {
         type: 'array'
     };
