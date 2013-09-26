@@ -79,7 +79,7 @@ myTemplate = {
         remove: {
             myCustomEventD: [arg1, argN]
         }
-    }
+    },
     
     links: [
         // see crud links module
