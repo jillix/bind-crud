@@ -34,6 +34,7 @@ var templateCache = {
         db: config.dbName,
         collection: config.templateColName,
         schema: templateSchema,
+        itemAccess: 'crud',
         roles: {
             '*': {
                 access: 'r'

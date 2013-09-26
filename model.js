@@ -246,8 +246,21 @@ module.exports = function (method, link) {
         }
         
         // check role access when reading templates
-        if (request.template._id.toString() === '000000000000000000000000') {
+        if (request.template.itemAccess) {
             request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
+            
+            // add role access to item
+            if (method === 'insert') {
+                request.data.roles = {};
+                request.data.roles[request.role] = {access: request.template.itemAccess};
+            }
+            
+            // prevent update method form overwrite his own rights
+            if (method === 'update') {
+                if (request.data.$set && typeof request.data.$set['roles.' + request.role + '.access'] !== 'undefined') {
+                    request.data.$set['roles.' + request.role + '.access'] = request.template.itemAccess;
+                }
+            }
         }
         
         createJoints(request, function (err, joints, length) {
