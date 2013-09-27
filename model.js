@@ -91,11 +91,6 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 // create request objects for merge data
 function createJoints (request, callback) {
     
-    // TODO remove this when updates on linked fields are possible
-    if (request.noJoins) {
-        return callback();
-    }
-    
     // check callback
     if (typeof callback !== 'function') {
         throw new Error('getMergeRequests: callback is mandatory');
@@ -201,7 +196,10 @@ function createJoints (request, callback) {
                         fields: linkedTemplatesToLoad[fetchedTemplate].fields
                     },
                     template: fetchedTemplates[fetchedTemplate],
+                    
+                    // TODO start here for issue #15
                     query: {},
+                    
                     merge: linkedTemplatesToLoad[fetchedTemplate].merge
                 };
                 
@@ -225,6 +223,34 @@ function createJoints (request, callback) {
     }
 }
 
+function doDbReqeust (link, request) {
+    
+    try {
+        recursiveConvert(request.template.schema.paths, request.query, '');
+    } catch (err) {
+        return link.send(400, 'Incorrect ObjectId format');
+    }
+    
+    // TODO This is a hack until we can merge the templates
+    if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
+        var copy = request.template.addToTemplates.slice();
+        copy.push(request.data._tp);
+        request.data._tp = copy;
+    }
+    
+    // emit a server event
+    if (request.template.on && request.template.on[request.method]) {
+        for (var event in request.template.on[request.method]) {
+            var copy = request.template.on[request.method][event].slice();
+            copy.splice(0, 0, event, request);
+            M.emit.apply(M, copy);
+        }
+    }
+
+    // do input/output
+    io[request.method](link, request);
+}
+
 module.exports = function (method, link) {
 
     if (!io[method]) {
@@ -238,14 +264,14 @@ module.exports = function (method, link) {
         return link.send(400, 'Bad request.');
     }
     
-    // get template (cache)
+    // get template and check access (cache)
     templates.getTemplate(request, function (err, request) {
 
         if (err) {
             return link.send(err.statusCode || 500, err.message);
         }
         
-        // check role access when reading templates
+        // check role access when reading templates with item access control
         if (request.template.itemAccess) {
             request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
             
@@ -263,42 +289,24 @@ module.exports = function (method, link) {
             }
         }
         
-        createJoints(request, function (err, joints, length) {
-            
-            if (err) {
-                return link.send(err.statusCode || 500, err.message);
-            }
-            
-            // add joints to request
-            if (joints) {
-                request.joints = joints;
-                request.jointsLength = length;
-            }
-            
-            try {
-                recursiveConvert(request.template.schema.paths, request.query, '');
-            } catch (err) {
-                return link.send(400, 'Incorrect ObjectId format');
-            }
-            
-            // TODO This is a hack until we can merge the templates
-            if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
-                var copy = request.template.addToTemplates.slice();
-                copy.push(request.data._tp);
-                request.data._tp = copy;
-            }
-            
-            // emit a server event
-            if (request.template.on && request.template.on[method]) {
-                for (var event in request.template.on[method]) {
-                    var copy = request.template.on[method][event].slice();
-                    copy.splice(0, 0, event, request);
-                    M.emit.apply(M, copy);
+        // make joins only on a find request 
+        if (method === 'find' && !request.noJoins) {
+            createJoints(request, function (err, joints, length) {
+                
+                if (err) {
+                    return link.send(err.statusCode || 500, err.message);
                 }
-            }
-    
-            // do input/output
-            io[method](link, request);
-        });
+                
+                // add joints to request
+                if (joints) {
+                    request.joints = joints;
+                    request.jointsLength = length;
+                }
+                
+                doDbReqeust(link, request);
+            });
+        } else {
+            doDbReqeust(link, request);
+        }
     });
 };
