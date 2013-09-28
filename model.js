@@ -93,7 +93,7 @@ function createJoints (request, callback) {
     
     // check callback
     if (typeof callback !== 'function') {
-        throw new Error('getMergeRequests: callback is mandatory');
+        return console.error('createJoints: callback is mandatory');
     }
     
     // check if schema paths are available

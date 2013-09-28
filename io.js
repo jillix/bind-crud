@@ -118,8 +118,6 @@ function jointResponse (link, dbReq, cursor, callback) {
 // read
 exports.find = function (link, dbReq, callback) {
     
-   // if (!hasAccess(link, dbReq, 1)) { return link.send(403, "Access denied."); }
-    
     // get data and count
     dbReq.template.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
         dbReq.template.collection.count(dbReq.query, function (countErr, count) {

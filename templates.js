@@ -46,7 +46,7 @@ var templateCache = {
         })
     }
     
-    // TODO move all core tempaltes to crud module
+    // TODO move all core tempaltes to crud module.. how to add roles??
 };
 // init collection
 templateCache[config.templateId].collection = templateCache[config.templateId].model(config.templateColName, templateSchema);
@@ -90,9 +90,7 @@ function checkAccess (template, role, method) {
 
 function initAndCache (template) {
 
-    if (typeof template.db !== 'string') {
-        return;
-    };
+    // TODO collect all links for faster access
     
     template.model = modm(template.db, {
         server: {pooSize: 3},
@@ -132,11 +130,14 @@ function getCachedTemplates (templates, role, method) {
     var addedTemplates = {};
     
     if (templates && templates.length > 0) {
-        // check cached templates
         for (var i = 0, l = templates.length; i < l; ++i) {
-            // add to result if role has access
-            if (templateCache[templates[i]] && checkAccess(templateCache[templates[i]], role, method)) {
-                resultTemplates[templates[i]] = templateCache[templates[i]];
+            // check if template is in cache
+            if (templateCache[templates[i]]) {
+                // check role access
+                if (checkAccess(templateCache[templates[i]], role, method)) {
+                    resultTemplates[templates[i]] = templateCache[templates[i]];
+                }
+            // add template to query
             } else if (!addedTemplates[templates[i]]) {
                 addedTemplates[templates[i]] = true;
                 queryTemplates.push(templates[i]);
@@ -153,95 +154,80 @@ function getCachedTemplates (templates, role, method) {
 function fetchTemplatesFromDb (templates, role, fields, method, callback) {
     
     var tpls = getCachedTemplates(templates, role, method);
-    var resultTemplates = {};
+    
+    // return if no templates must be fetched from db
+    if (tpls.query.length === 0) {
+        return callback(null, tpls.cached);
+    }
     
     // build query
     var dbReq = {
-        query: {_tp: config.templateId},
+        query: {
+            _id: {$in: []},
+            _tp: config.templateId
+        },
         options: {
             fields: fields || {},
-            limit: templates.length
+            limit: tpls.query.length
         },
         template: templateCache[config.templateId]
     };
     
-    if (tpls) {
-        var templates = tpls.query;
-        resultTemplates = tpls.cached;
-        
-        dbReq.query['roles.' + role + '.access'] = {$regex: getAccessKey(method)};
-        
-        if (templates.length > 1) {
-            
-            dbReq.query._id = {$in: []};
-            dbReq.options.limit = templates.length;
-            
-            for (var i = 0, l = templates.length; i < l; ++i) {
-                templates[i] = ObjectId(templates[i]);
-                if (!templates[i]) {
-                    var err = new Error('Invalid templates.');
-                    err.statusCode = 400;
-                    return callback(err);
-                }
-                
-                dbReq.query._id.$in.push(templates[i]);
-            }
-        } else if (templates.length > 0) {
-            
-            if (templates[0] = ObjectId(templates[0])) {
-                dbReq.options.limit = 1;
-                dbReq.query._id = templates[0];
-            } else {
-                var err = new Error('Invalid templates.');
-                err.statusCode = 400;
-                return callback(err);
-            }
+    // check acces on template item
+    dbReq.query['roles.' + role + '.access'] = {$regex: getAccessKey(method)};
+    
+    // add templates to query
+    for (var i = 0, l = tpls.query.length; i < l; ++i) {
+        tpls.query[i] = ObjectId(tpls.query[i]);
+        if (!tpls.query[i]) {
+            var err = new Error('Invalid templates.');
+            err.statusCode = 400;
+            return callback(err);
         }
+        
+        dbReq.query._id.$in.push(tpls.query[i]);
     }
     
-    if (!tpls || tpls.query.length > 0) {
-        
-        io.find(null, dbReq, function (err, cursor) {
+    // fetch requested templates from db
+    io.find(null, dbReq, function (err, cursor) {
 
+        if (err) {
+            err.statusCode = 500;
+            return callback(err);
+        }
+        
+        if (!cursor) {
+            var err = new Error('Templates not found.');
+            err.statusCode = 404;
+            return callback(err);
+        }
+        
+        cursor.toArray(function (err, templates) {
+            
             if (err) {
                 err.statusCode = 500;
                 return callback(err);
             }
             
-            if (!cursor) {
+            if (!templates || templates.length === 0) {
                 var err = new Error('Templates not found.');
                 err.statusCode = 404;
                 return callback(err);
             }
             
-            cursor.toArray(function (err, templates) {
-
-                if (err) {
-                    err.statusCode = 500;
-                    return callback(err);
-                }
+            // merge with cached templates
+            for (var i = 0, l = templates.length; i < l; ++i) {
                 
-                if (!templates || templates.length === 0) {
-                    var err = new Error('Templates not found.');
-                    err.statusCode = 404;
-                    return callback(err);
-                }
-                
-                for (var i = 0, l = templates.length; i < l; ++i) {
-                    var temp = initAndCache(templates[i]);
-                    if (temp) {
-                        resultTemplates[templates[i]._id] = temp;
-                    }
-                }
-                
-                callback(null, resultTemplates);
-            });
+                // init and cache templates
+                tpls.cached[templates[i]._id] = initAndCache(templates[i]);
+            }
+            
+            callback(null, tpls.cached);
         });
-    } else {
-        callback(null, tpls.cached);
-    }
+    });
 }
 
+// called from the model.js to check template access
 function getTemplate (request, callback) {
 
     fetchTemplatesFromDb([request.templateId], request.role, {}, request.method, function (err, template) {
@@ -263,6 +249,7 @@ function getTemplate (request, callback) {
     });
 }
 
+// get templates for joins
 function getMergeTemplates (templates, role, callback) {
 
     fetchTemplatesFromDb(templates, role, {}, 'find', function (err, templates) {
@@ -275,6 +262,7 @@ function getMergeTemplates (templates, role, callback) {
     });
 }
 
+// called from the getTempaltes operation
 function getTemplates (templates, role, callback) {
     
     var myRoleString = role ? role.toString() : '';
