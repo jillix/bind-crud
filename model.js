@@ -91,136 +91,101 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 // create request objects for merge data
 function createJoints (request, callback) {
     
-    // check callback
-    if (typeof callback !== 'function') {
-        return console.error('createJoints: callback is mandatory');
-    }
-    
     // check if schema paths are available
     if (!request || !request.template || !request.template.schema || !request.template.schema.paths) {
         return callback('No schema paths available.');
     }
     
     var schema = request.template.linkedFields;
-    var returnFields = request.options && request.options.fields ? request.options.fields : null;
-    var linkedFieldsToLoad = {};
     var linkedTemplatesToLoad = {};
-    var linksExists = false;
+    var returnFields;
     
-    // check if a return field points to a linked document
+    // return fields
+    if (request.options && request.options.fields) {
+        returnFields = request.options.fields;
+        request.options.fields = {};
+    }
+    
+    // handle fields who contain a link
     for (var field in schema) {
-        if (!schema[field].link) {
-            continue;
-        }
         
+        // get templates that must be loaded and save the cropped
+        // schema paths to validate field in linked schema
+        if (!linkedTemplatesToLoad[schema[field].link]) {
+            linkedTemplatesToLoad[schema[field].link] = {
+                fields: {},
+                merge: {}
+            };
+        }
+        linkedTemplatesToLoad[schema[field].link].merge[field] = 1;
+        
+        // check if a return field points to a linked document
         if (returnFields) {
             for (var returnField in returnFields) {
-                if (returnFields[returnField] && returnField.indexOf(field) === 0) {
-                    
-                    // collect fields who contain a link
-                    linkedFieldsToLoad[field] = schema[field].link;
-                    linksExists = true;
-                    
-                    // get templates that must be loaded and save the cropped
-                    // schema paths to validate field in linked schema
-                    if (!linkedTemplatesToLoad[schema[field].link]) {
-                        linkedTemplatesToLoad[schema[field].link] = {
-                            fields: {},
-                            merge: {}
-                        };
+                if (returnField.indexOf(field) === 0) {
+                    if (returnFields[returnField]) {
+                        
+                        // collect field on linked template
+                        linkedTemplatesToLoad[schema[field].link].fields[returnField.substr(field.length + 1)] = 1;
+                        
+                        // lined field is needed to merge the data
+                        request.options.fields[field] = 1;
                     }
-                    
-                    linkedTemplatesToLoad[schema[field].link].fields[returnField.substr(field.length + 1)] = 1;
-                    linkedTemplatesToLoad[schema[field].link].merge[field] = 1;
-                    
-                    returnFields[field] = 1;
-                    returnFields[returnField] = null;
+                // get fields of local template
+                } else {
+                    request.options.fields[returnField] = returnFields[returnField];
                 }
             }
-        } else {
-            
-            // collect fields who contain a link
-            linkedFieldsToLoad[field] = schema[field].link;
-            linksExists = true;
-            
-            if (!linkedTemplatesToLoad[schema[field].link]) {
-                linkedTemplatesToLoad[schema[field].link] = {
-                    fields: {},
-                    merge: {}
-                };
-            }
-            
-            // get templates that must be loaded
-            linkedTemplatesToLoad[schema[field].link].fields = {};
-            linkedTemplatesToLoad[schema[field].link].merge[field] = 1;
         }
     }
     
-    // remove fields that point to linked documents
-    if (returnFields) {
-        var rtrnFlds = {};
-        for (var returnField in returnFields) {
-            if (returnField === '_id' || returnFields[returnField]) {
-                rtrnFlds[returnField] = returnFields[returnField];
-            }
-        }
-        
-        request.options.fields = rtrnFlds;
+    // convert linked tempaltes object to an array
+    var linkedTemplatesToLoad_array = [];
+    for (var template in linkedTemplatesToLoad) {
+        linkedTemplatesToLoad_array.push(template);
     }
     
-    // get linked schema
-    if (linksExists) {
+    // get linked templates
+    templates.getMergeTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
         
-        // convert linked tempaltes object to an array
-        var linkedTemplatesToLoad_array = [];
-        for (var template in linkedTemplatesToLoad) {
-            linkedTemplatesToLoad_array.push(template);
+        if (err) {
+            return callback(err);
         }
         
-        // get templates
-        templates.getMergeTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
+        // create request for linked template
+        var mergeRequests = {};
+        var length = 0;
+        for (var fetchedTemplate in fetchedTemplates) {
             
-            if (err) {
-                return callback(err);
+            // create merge request
+            mergeRequests[fetchedTemplate] = {
+                role: request.role,
+                options: {
+                    fields: linkedTemplatesToLoad[fetchedTemplate].fields
+                },
+                template: fetchedTemplates[fetchedTemplate],
+                
+                // TODO start here for issue #15
+                query: {},
+                
+                merge: linkedTemplatesToLoad[fetchedTemplate].merge
+            };
+            
+            // make sure _id gets always returned
+            if (returnFields) {
+                request.options.fields._id = 1;
             }
             
-            // create request for linked template
-            var mergeRequests = {};
-            var length = 0;
-            for (var fetchedTemplate in fetchedTemplates) {
-                
-                // create merge request
-                mergeRequests[fetchedTemplate] = {
-                    role: request.role,
-                    options: {
-                        fields: linkedTemplatesToLoad[fetchedTemplate].fields
-                    },
-                    template: fetchedTemplates[fetchedTemplate],
-                    
-                    // TODO start here for issue #15
-                    query: {},
-                    
-                    merge: linkedTemplatesToLoad[fetchedTemplate].merge
-                };
-                
-                // make sure _id gets always returned
-                if (returnFields) {
-                    request.options.fields._id = 1;
-                }
-                
-                // take limit from request
-                if (request.options.limit) {
-                    mergeRequests[fetchedTemplate].options.limit = request.options.limit;
-                }
-                
-                ++length;
+            // take limit from request
+            if (request.options.limit) {
+                mergeRequests[fetchedTemplate].options.limit = request.options.limit;
             }
             
-            callback(null, mergeRequests, length);
-        });
-    } else {
-        callback();
-    }
+            ++length;
+        }
+        
+        callback(null, mergeRequests, length);
+    });
 }
 
 function doDbReqeust (link, request) {
