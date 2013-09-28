@@ -114,6 +114,7 @@ function createJoints (request, callback) {
         if (!linkedTemplatesToLoad[schema[field].link]) {
             linkedTemplatesToLoad[schema[field].link] = {
                 fields: {},
+                query: {},
                 merge: {}
             };
         }
@@ -137,6 +138,8 @@ function createJoints (request, callback) {
                 }
             }
         }
+        
+        // TODO get query for linked template (issue #15)
     }
     
     // convert linked tempaltes object to an array
@@ -164,10 +167,7 @@ function createJoints (request, callback) {
                     fields: linkedTemplatesToLoad[fetchedTemplate].fields
                 },
                 template: fetchedTemplates[fetchedTemplate],
-                
-                // TODO start here for issue #15
-                query: {},
-                
+                query: linkedTemplatesToLoad[fetchedTemplate].query,
                 merge: linkedTemplatesToLoad[fetchedTemplate].merge
             };
             
