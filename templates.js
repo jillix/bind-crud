@@ -89,8 +89,6 @@ function checkAccess (template, role, method) {
 }
 
 function initAndCache (template) {
-
-    // TODO collect all links for faster access
     
     template.model = modm(template.db, {
         server: {pooSize: 3},
@@ -116,6 +114,18 @@ function initAndCache (template) {
     
     template.schema = new modm.Schema(template.schema);
     template.collection = template.model(template.collection, template.schema);
+    
+    // collect all links for faster access
+    for (var field in template.schema.paths) {
+        if (template.schema.paths[field].link) {
+            if (!template.linkedFields) {
+                template.linkedFields = {};
+            }
+            
+            template.linkedFields[field] = template.schema.paths[field];
+        }
+    }
+    
     return templateCache[template._id] = template;
 }
 

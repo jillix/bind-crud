@@ -101,7 +101,7 @@ function createJoints (request, callback) {
         return callback('No schema paths available.');
     }
     
-    var schema = request.template.schema.paths;
+    var schema = request.template.linkedFields;
     var returnFields = request.options && request.options.fields ? request.options.fields : null;
     var linkedFieldsToLoad = {};
     var linkedTemplatesToLoad = {};
@@ -289,8 +289,8 @@ module.exports = function (method, link) {
             }
         }
         
-        // make joins only on a find request 
-        if (method === 'find' && !request.noJoins) {
+        // make joins only on find requests and when template has linked fields
+        if (method === 'find' && request.template.linkedFields && !request.noJoins) {
             createJoints(request, function (err, joints, length) {
                 
                 if (err) {
