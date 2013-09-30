@@ -1,32 +1,43 @@
 M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
+    
 var methods = ['find','remove','update','insert'];
 
 // cache templates
 var templateCache = {};
 
-function extendTemplateSchemas (templates, callback) {
+// merge linked templates
+function mergeTemplates (templates) {
+    var self = this;
     
-    // TODO get linked templatet and merge schema field with linked field schema config
     for (var template in templates) {
-        for (var field in templates[template].schema) {
-            if (templates[template].schema[field].link && templates[template].schema[field].fields) {
+        for (var link in templates[template].linked) {
+            
+            if (templateCache[templates[template].linked[link].link]) {
+                
+                // merge linked schema
+                for (var field in templateCache[templates[template].linked[link].link].schema) {
+                    if (field[0] !== '_') {
+                        templates[template].schema[link + '.' + field] = templateCache[templates[template].linked[link].link].schema[field];
+                    }
+                }
                 
                 // hide link field
-                templates[template].schema[field].hidden = true;
-                
-                for (var linkedField in templates[template].schema[field].fields) {
-                    
-                    // don't search on linked fields
-                    // TODO: searching in linked fields could be a feature of bind-crud
-                    templates[template].schema[field].fields[linkedField].noSearch = true;
-                    
-                    templates[template].schema[field + '.' + linkedField] = templates[template].schema[field].fields[linkedField];
+                templates[template].schema[link].hidden = true;
+                templates[template].schema[link].noSearch = true;
+            }
+            
+            // merge linked schema config
+            if (templates[template].schema[link].fields) {
+                for (var linkedField in templates[template].schema[link].fields) {
+                    for (var option in templates[template].schema[link].fields[linkedField]) {
+                        templates[template].schema[link + '.' + linkedField][option] = templates[template].schema[link].fields[linkedField][option];
+                    }
                 }
             }
         }
     }
     
-    callback(null, templates);
+    return templates;
 }
 
 // TODO callback buffering
@@ -38,6 +49,7 @@ function templateHandler (templates, callback) {
         return;
     }
     
+    // collect cached templates and templates to load.
     var resultTemplates = {};
     var templatesToFetch = [];
     for (var i = 0, l = templates.length; i < l; ++i) {
@@ -48,6 +60,7 @@ function templateHandler (templates, callback) {
         }
     }
     
+    // fetch templates from server
     if (templates.length === 0 || templatesToFetch.length > 0) {
         self.link('getTemplates', {data: templatesToFetch}, function (err, templates) {
 
@@ -55,17 +68,42 @@ function templateHandler (templates, callback) {
                 return callback(err);
             }
             
+            var linkedTemplates = [];
+            
             // merge fetched templates into result templates
             for (var template in templates) {
-                templateCache[template] = resultTemplates[template] = templates[template];
+                
+                resultTemplates[template] = templateCache[template] = templates[template];
+                
+                for (var field in templates[template].schema) {
+                    
+                    // collect linked templates
+                    if (templates[template].schema[field].link) {
+                        linkedTemplates.push(templates[template].schema[field].link);
+                    }
+                }
             }
             
-            // exend schema fields with linked schemas 
-            extendTemplateSchemas(resultTemplates, callback);
+            // fetch linked templates
+            if (linkedTemplates.length > 0) {
+                templateHandler.call(self, linkedTemplates, function (err) {
+                    
+                    if (err) {
+                        return callback(err);
+                    }
+                    
+                    mergeTemplates(templates);
+                    
+                    callback(null, resultTemplates);
+                });
+            } else {
+                callback(null, resultTemplates);
+            }
         });
+        
+    // return cached templates
     } else {
-        // exend schema fields with linked schemas 
-        extendTemplateSchemas(resultTemplates, callback);
+        callback(null, resultTemplates);
     }
 };
 

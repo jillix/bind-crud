@@ -288,7 +288,6 @@ function getTemplates (templates, role, callback) {
             
             result[id] = {
                 id: templates[id]._id,
-                //name: templates[id].name,
                 schema: templates[id].schema.paths
             };
 
