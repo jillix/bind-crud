@@ -74,11 +74,13 @@ function templateHandler (templates, callback) {
             for (var template in templates) {
                 
                 resultTemplates[template] = templateCache[template] = templates[template];
+                templates[template].linked = {};
                 
                 for (var field in templates[template].schema) {
                     
                     // collect linked templates
                     if (templates[template].schema[field].link) {
+                        templates[template].linked[field] = templates[template].schema[field];
                         linkedTemplates.push(templates[template].schema[field].link);
                     }
                 }
