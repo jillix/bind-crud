@@ -115,10 +115,9 @@ function createJoints (request, callback) {
             linkedTemplatesToLoad[schema[field].link] = {
                 fields: {},
                 query: {},
-                merge: {}
+                merge: field
             };
         }
-        linkedTemplatesToLoad[schema[field].link].merge[field] = 1;
         
         // check if a return field points to a linked document
         if (returnFields) {
@@ -139,7 +138,15 @@ function createJoints (request, callback) {
             }
         }
         
-        // TODO get query for linked template (issue #15)
+        // get query for linked template
+        for (var queryField in request.query) {
+            if (queryField !== field && queryField.indexOf(field) === 0) {
+                linkedTemplatesToLoad[schema[field].link].query[queryField.substr(field.length + 1)] = request.query[queryField];
+                
+                // remove link queries from request query
+                delete request.query[queryField];
+            }
+        }
     }
     
     // convert linked tempaltes object to an array

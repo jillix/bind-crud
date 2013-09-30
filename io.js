@@ -35,6 +35,19 @@ function response (link, err, result, callback) {
     }
 }
 
+function sendJointResult (link, result, callback) {
+    
+    var items = [];
+    
+    for (var i = 0, l = result.length; i < l; ++i) {
+        if (result[i]) {
+            items.push(result[i]);
+        }
+    }
+    
+    callback ? callback(err, result) : link.send(200, items);
+}
+
 function jointResponse (link, dbReq, cursor, callback) {
     
     cursor.toArray(function (err, result) {
@@ -56,13 +69,11 @@ function jointResponse (link, dbReq, cursor, callback) {
             
             // get ids from linked fields
             var uniqueId = {};
-            dbReq.joints[joint].query = {_id: {$in: []}};
+            dbReq.joints[joint].query._id = {$in: []};
             for (var i = 0, l = result.length; i < l; ++i) {
-                for (var mergeField in dbReq.joints[joint].merge) {
-                    if (!uniqueId[result[i][mergeField]] && result[i][mergeField]) {
-                        uniqueId[result[i][mergeField]] = 1;
-                        dbReq.joints[joint].query._id.$in.push(result[i][mergeField]);
-                    }
+                if (!uniqueId[result[i][dbReq.joints[joint].merge]] && result[i][dbReq.joints[joint].merge]) {
+                    uniqueId[result[i][dbReq.joints[joint].merge]] = 1;
+                    dbReq.joints[joint].query._id.$in.push(result[i][dbReq.joints[joint].merge]);
                 }
             }
             
@@ -70,14 +81,34 @@ function jointResponse (link, dbReq, cursor, callback) {
             (function (jointDbReq) {
                 jointDbReq.template.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
                     
+                    // ignore query when no items in result
+                    if (result.length === 0) {
+                        if (++current === dbReq.jointsLength) {
+                            sendJointResult(link, result, callback);
+                        }
+                        return;
+                    }
+                    
                     if (err) {
-                        return ++crrent;
+                        if (++current === dbReq.jointsLength) {
+                            sendJointResult(link, result, callback);
+                        }
                     }
                     
                     cursor.toArray(function (err, jointResult) {
                     
                         if (err) {
-                            return ++current;
+                            if (++current === dbReq.jointsLength) {
+                                sendJointResult(link, result, callback);
+                            }
+                        }
+                        
+                        // set empty result if no items found
+                        if (jointResult.length === 0) {
+                            result = [];
+                            if (++current === dbReq.jointsLength) {
+                                sendJointResult(link, result, callback);
+                            }
                         }
                         
                         // create joint object
@@ -88,25 +119,22 @@ function jointResponse (link, dbReq, cursor, callback) {
                         
                         // merge linkd data
                         for (var i = 0, l = result.length; i < l; ++i) {
-                            for (var field in jointDbReq.merge) {
-                                
-                                if (result[i][field]) {
-                                    
-                                    // set and emtpy object if no jointResults are found
-                                    if (jointResult.length === 0) {
-                                        result[i][field] = {};
-                                        
-                                    // find id in joint results
-                                    } else if (jointData[result[i][field]] && jointData[result[i][field]]._id.toString() === result[i][field].toString()) {
-                                        // merge linked data in result field
-                                        result[i][field] = jointData[result[i][field]];
-                                    }
-                                }
+                            
+                            if (
+                                result[i] && 
+                                result[i][jointDbReq.merge] &&
+                                jointData[result[i][jointDbReq.merge]] &&
+                                jointData[result[i][jointDbReq.merge]]._id.toString() === result[i][jointDbReq.merge].toString()
+                            ) {
+                                // merge linked data in result field
+                                result[i][jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
+                            } else {
+                                result[i] = null;
                             }
                         }
                         
                         if (++current === dbReq.jointsLength) {
-                            callback ? callback(err, result) : link.send(200, result);
+                            sendJointResult(link, result, callback);
                         }
                     });
                 });
