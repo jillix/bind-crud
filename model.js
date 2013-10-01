@@ -101,7 +101,7 @@ function createJoints (request, callback) {
     var returnFields;
     
     // return fields
-    if (request.options && request.options.fields) {
+    if (request.options.fields) {
         returnFields = request.options.fields;
         request.options.fields = {};
     }
