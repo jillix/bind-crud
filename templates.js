@@ -250,8 +250,8 @@ function getTemplate (request, callback) {
         request.template = template[request.templateId];
         
         if (!request.template) {
-            err = new Error('No right to access template ' + request.templateId + ' with the "' + request.method + '" method.');
-            err.statusCode = 500;
+            err = new Error('Templates not found.');
+            err.statusCode = 404;
             return callback(err);
         }
         
