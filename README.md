@@ -27,9 +27,7 @@ There is also a `getTemplates` event which fetches template data. Pass an array 
     // the document object (updates) in MongoDB format
     d: {/*update document*/},
     // the CRUD operation options in node-monogdb-native (NodeJs MongoDb driver) format
-    o: {/*options*/},
-    // the CRUD operation projection in MongoDb format
-    f: {/*fields*/}
+    o: {/*options*/}
 }
 ```
 

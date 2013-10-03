@@ -40,11 +40,6 @@ function createRequest (method, link) {
         request.options = data.o;
     }
 
-    // fields
-    if (data.f && data.f.constructor.name === 'Object') {
-        request.options.fields = data.f;
-    }
-
     return request;
 }
 
