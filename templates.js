@@ -108,9 +108,9 @@ function initAndCache (template) {
     };
     
     // add mandatory field _li
-    template.schema._li = {
-        type: 'array'
-    };
+    template.schema._li = [{
+        type: 'objectid'
+    }];
     
     template.schema = new modm.Schema(template.schema);
     template.collection = template.model(template.collection, template.schema);
