@@ -44,6 +44,13 @@ function mergeTemplates (templates) {
 function templateHandler (templates, callback) {
     var self = this;
     
+    console.error(arguments);
+    // TODO
+    // - get templates from query
+    // -- check cache then fetch
+    // - if empty fetch all
+    // -- fetch than check cache
+    
     // check callback
     if (typeof callback !== 'function') {
         return;
@@ -62,7 +69,7 @@ function templateHandler (templates, callback) {
     
     // fetch templates from server
     if (templates.length === 0 || templatesToFetch.length > 0) {
-        self.link('getTemplates', {data: templatesToFetch}, function (err, templates) {
+        self.link('find', {data: templatesToFetch}, function (err, templates) {
 
             if (err) {
                 return callback(err);
@@ -105,9 +112,10 @@ function templateHandler (templates, callback) {
         
     // return cached templates
     } else {
+        console.error('trucken');
         callback(null, resultTemplates);
     }
-};
+}
 
 var miidCache = {};
 
@@ -132,14 +140,18 @@ function setupListen (listen) {
                             callback = data;
                             data = null;
                         }
+                        
+                        // handle template requests
+                        /*if (method === 'find' && data && data.t === '000000000000000000000000') {
+                            if (!Object.keys(data.q).length || data.q._id) {
+                                return templateHandler.call(self, data, callback);
+                            }
+                        }*/
+                        
                         self.link(method, {data: data}, callback);
                     };
                 })(methods[ii]));
             }
-            
-            self.on('getTemplates', listen[i], function (templates, callback) {
-                templateHandler.call(self, templates, callback);
-            });
             
             self.on('listenTo', listen[i], function (listenMiids) {
                 setupListen.call(self, listenMiids);

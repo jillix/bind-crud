@@ -39,7 +39,16 @@ function createRequest (method, link) {
     if (data.o && data.o.constructor.name === 'Object') {
         request.options = data.o;
     }
-
+    
+    // never return the _crud object
+    if (request.options.fields) {
+        if (request.options.fields._crud) {
+            delete request.options.fields._crud;
+        }
+    } else {
+        request.options.fields = {_crud: 0};
+    }
+    
     return request;
 }
 
@@ -159,18 +168,17 @@ function createJoints (request, callback) {
         
         // create request for linked template
         var mergeRequests = {};
-        var length = 0;
-        for (var fetchedTemplate in fetchedTemplates) {
+        for (var i = 0, l = fetchedTemplates.length; i < l; ++i) {
             
             // create merge request
-            mergeRequests[fetchedTemplate] = {
+            mergeRequests[fetchedTemplates[i]._id] = {
                 role: request.role,
                 options: {
-                    fields: linkedTemplatesToLoad[fetchedTemplate].fields
+                    fields: linkedTemplatesToLoad[fetchedTemplates[i]._id].fields
                 },
-                template: fetchedTemplates[fetchedTemplate],
-                query: linkedTemplatesToLoad[fetchedTemplate].query,
-                merge: linkedTemplatesToLoad[fetchedTemplate].merge
+                template: fetchedTemplates[i],
+                query: linkedTemplatesToLoad[fetchedTemplates[i]._id].query,
+                merge: linkedTemplatesToLoad[fetchedTemplates[i]._id].merge
             };
             
             // make sure _id gets always returned
@@ -180,23 +188,15 @@ function createJoints (request, callback) {
             
             // take limit from request
             if (request.options.limit) {
-                mergeRequests[fetchedTemplate].options.limit = request.options.limit;
+                mergeRequests[fetchedTemplates[i]._id].options.limit = request.options.limit;
             }
-            
-            ++length;
         }
         
-        callback(null, mergeRequests, length);
+        callback(null, mergeRequests, mergeRequests.length);
     });
 }
 
 function doDbReqeust (link, request) {
-    
-    try {
-        recursiveConvert(request.template.schema.paths, request.query, '');
-    } catch (err) {
-        return link.send(400, 'Incorrect ObjectId format');
-    }
     
     // TODO This is a hack until we can merge the templates
     if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
@@ -219,11 +219,11 @@ function doDbReqeust (link, request) {
 }
 
 module.exports = function (method, link) {
-
+    
     if (!io[method]) {
         return link.send(501, 'Method not implemented');
     }
-
+    
     // check parameters
     var request = createRequest(method, link);
     
@@ -238,20 +238,39 @@ module.exports = function (method, link) {
             return link.send(err.statusCode || 500, err.message);
         }
         
+        try {
+            recursiveConvert(request.template.schema.paths, request.query, '');
+        } catch (err) {
+            return link.send(400, 'Incorrect ObjectId format');
+        }
+        
+        // sepecial handler for template requests
+        if (method === 'find' && request.templateId === templates.templateId.toString()) {
+            return templates.getTemplates(request, function (err, result) {
+                    
+                    if (err) {
+                        return link.send(err.statusCode || 500, err.message);
+                    }
+                    
+                    link.send(200, result);
+                }
+            );
+        }
+        
         // check role access when reading templates with item access control
-        if (request.template.itemAccess) {
-            request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
+        if (request.template._crud.itemAccess) {
+            request.query['_crud.roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
             
             // add role access to item
             if (method === 'insert') {
-                request.data.roles = {};
-                request.data.roles[request.role] = {access: request.template.itemAccess};
+                request.data._crud = {roles: {}};
+                request.data._crud.roles[request.role] = {access: request.template._crud.itemAccess};
             }
             
             // prevent update method form overwrite his own rights
             if (method === 'update') {
-                if (request.data.$set && typeof request.data.$set['roles.' + request.role + '.access'] !== 'undefined') {
-                    request.data.$set['roles.' + request.role + '.access'] = request.template.itemAccess;
+                if (request.data.$set && typeof request.data.$set['_crud.roles.' + request.role + '.access'] !== 'undefined') {
+                    request.data.$set['_crud.roles.' + request.role + '.access'] = request.template._crud.itemAccess;
                 }
             }
         }
