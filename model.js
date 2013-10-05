@@ -40,20 +40,11 @@ function createRequest (method, link) {
         request.options = data.o;
     }
     
-    // never return the _crud object
-    if (request.options.fields) {
-        if (request.options.fields._crud) {
-            delete request.options.fields._crud;
-        }
-    } else {
-        request.options.fields = {_crud: 0};
-    }
-    
     return request;
 }
 
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
-
+    
     // if array of objects
     if (obj.constructor.name === 'Array') {
         for (var i in obj) {
@@ -96,7 +87,7 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 function createJoints (request, callback) {
     
     // check if schema paths are available
-    if (!request || !request.template || !request.template.schema || !request.template.schema.paths) {
+    if (!request || !request.template || !request.template.schema || !request.template.schema) {
         return callback('No schema paths available.');
     }
     
@@ -237,7 +228,7 @@ module.exports = function (method, link) {
         }
         
         try {
-            recursiveConvert(request.template.schema.paths, request.query, '');
+            recursiveConvert(request.template.schema, request.query, '');
         } catch (err) {
             return link.send(400, 'Incorrect ObjectId format');
         }
@@ -256,19 +247,19 @@ module.exports = function (method, link) {
         }
         
         // check role access when reading templates with item access control
-        if (request.template._crud.itemAccess) {
-            request.query['_crud.roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
+        if (request.template.itemAccess) {
+            request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
             
             // add role access to item
             if (method === 'insert') {
-                request.data._crud = {roles: {}};
-                request.data._crud.roles[request.role] = {access: request.template._crud.itemAccess};
+                request.data.roles = {};
+                request.data.roles[request.role] = {access: request.template.itemAccess};
             }
             
             // prevent update method form overwrite his own rights
             if (method === 'update') {
-                if (request.data.$set && typeof request.data.$set['_crud.roles.' + request.role + '.access'] !== 'undefined') {
-                    request.data.$set['_crud.roles.' + request.role + '.access'] = request.template._crud.itemAccess;
+                if (request.data.$set && typeof request.data.$set['roles.' + request.role + '.access'] !== 'undefined') {
+                    request.data.$set['roles.' + request.role + '.access'] = request.template.itemAccess;
                 }
             }
         }

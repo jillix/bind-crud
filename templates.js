@@ -11,15 +11,12 @@ var config = {
         _id: {type: 'objectid'},
         _tp: {type: 'objectid', required: true},
         _li: [{type: 'objectid'}],
-        _crud: {
-            db: {type: 'string', required: true},
-            collection: {type: 'string', required: true},
-            roles: {type: 'object', required: true},
-            itemAccess: {type: 'string'}
-        },
+        db: {type: 'string', required: true},
+        collection: {type: 'string', required: true},
+        roles: {type: 'object', required: true},
+        itemAccess: {type: 'string'},
         name: {type: 'string', required: true},
         schema: {type: 'object', required: true},
-        label: {type: 'string'},
         links: {type: 'array'},
         options: {type: 'object'}
     }
@@ -33,34 +30,37 @@ var templateCache = {
     // it's impossible to create the first template item
     '000000000000000000000000': {
         _id: modm.ObjectId('000000000000000000000000'),
-        _crud: {
-            db: config.dbName,
-            collection: config.templateColName,
-            roles: {
-                '*': {
-                    access: 'r'
-                }
-            },
-            itemAccess: 'crud',
-            model: modm(config.dbName, {
+        _modm: {
+            db: modm(config.dbName, {
                 server: {pooSize: 3},
                 db: {w: 1}
             })
         },
+        db: config.dbName,
+        collection: config.templateColName,
+        roles: {
+            '*': {
+                access: 'r'
+            }
+        },
+        itemAccess: 'crud',
         label: 'Templates',
-        schema: templateSchema
+        schema: templateSchema.paths
         
     }
     
     // TODO move all core tempaltes to crud module.. how to add roles??
 };
 // init collection
-templateCache[config.templateId]._crud.collection = templateCache[config.templateId]._crud.model(config.templateColName, templateSchema);
+templateCache[config.templateId]._modm.collection = templateCache[config.templateId]._modm.db(config.templateColName, templateSchema);
 
 var privateFields = {
-    _crud: 1,
     _tp: 1,
     _li: 1,
+    db: 1,
+    collection: 1,
+    roles: 1,
+    itemAccess: 1,
     linkedFields: 1
 };
 
@@ -80,17 +80,13 @@ function getAccessKey (method) {
 // check access
 function checkAccess (template, role, method) {
     
-    if (!template._crud) {
-        return false;
-    }
-    
     // grant access for templates without roles or for the role wildcard
-    if (!template._crud.roles || (template._crud.roles['*'] && typeof template._crud.roles['*'].access === 'string' && template._crud.roles['*'].access.indexOf(getAccessKey(method)) > -1)) {
+    if (!template.roles || (template.roles['*'] && typeof template.roles['*'].access === 'string' && template.roles['*'].access.indexOf(getAccessKey(method)) > -1)) {
         return true;
     }
     
     // check if role has read rights
-    if (template._crud.roles[role] && typeof template._crud.roles[role].access === 'string' && template._crud.roles[role].access.indexOf(getAccessKey(method)) > -1) {
+    if (template.roles[role] && typeof template.roles[role].access === 'string' && template.roles[role].access.indexOf(getAccessKey(method)) > -1) {
         return true;
     }
     
@@ -99,10 +95,13 @@ function checkAccess (template, role, method) {
 
 function initAndCache (template) {
     
-    template._crud.model = modm(template._crud.db, {
-        server: {pooSize: 3},
-        db: {w: 1}
-    });
+    // save modm instance on tempalte
+    template._modm = {
+        model: modm(template.db, {
+            server: {pooSize: 3},
+            db: {w: 1}
+        })
+    };
     
     // add mandatory field _tp
     template.schema._tp = {
@@ -121,17 +120,19 @@ function initAndCache (template) {
         type: 'objectid'
     }];
     
-    template.schema = new modm.Schema(template.schema);
-    template._crud.collection = template._crud.model(template._crud.collection, template.schema);
+    template._modm.schema = new modm.Schema(template.schema);
+    template._modm.collection = template._modm.model(template.collection, template._modm.schema);
+    
+    template.schema = template._modm.schema.paths;
     
     // collect all links for faster access
-    for (var field in template.schema.paths) {
-        if (template.schema.paths[field].link) {
+    for (var field in template.schema) {
+        if (template.schema[field].link) {
             if (!template.linkedFields) {
                 template.linkedFields = {};
             }
             
-            template.linkedFields[field] = template.schema.paths[field];
+            template.linkedFields[field] = template.schema[field];
         }
     }
     
@@ -201,6 +202,7 @@ function fetchTemplates (request, callback) {
         dbReq.options.limit = cached.query.length;
         
     // {} => fetch then check cache
+    // TODO handle $in queries with cache
     } else if (request.query.constructor.name === 'Object') {
         cached.cached = [];
         
@@ -211,11 +213,11 @@ function fetchTemplates (request, callback) {
     
     // check acces on template item
     dbReq.query._tp = config.templateId;
-    dbReq.query['_crud.roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
+    dbReq.query['roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
     
     // fetch requested templates from db
     io.find(null, dbReq, function (err, cursor) {
-
+        
         if (err) {
             err.statusCode = 500;
             return callback(err);
@@ -309,13 +311,20 @@ function getTemplates (request, callback) {
         }
         
         var result = [];
-        for (var i = 0, l = templates.length; i < l; ++i) {
+        for (var i = 0, l = templates.length, admin; i < l; ++i) {
             
             result[i] = {};
             
+            // return full template if user has admin rigths
+            admin = false;
+            if (templates[i].roles[request.role] && templates[i].roles[request.role].access.match(/c|u|d/)) {
+                admin = true;
+            }
+            
+            // remove private fields from result templates
             for (var field in templates[i]) {
-                if (!privateFields[field]) {
-                    result[i][field] = field === 'schema' ? templates[i][field].paths : templates[i][field];
+                if ((admin || !privateFields[field]) && field !== '_modm') {
+                    result[i][field] = templates[i][field];
                 }
             }
         }

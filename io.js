@@ -178,8 +178,8 @@ function jointResponse (link, dbReq, cursor, callback) {
 exports.find = function (link, dbReq, callback) {
     
     // get data and count
-    dbReq.template._crud.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
-        dbReq.template._crud.collection.count(dbReq.query, function (countErr, count) {
+    dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
+        dbReq.template._modm.collection.count(dbReq.query, function (countErr, count) {
             
             if (link && !countErr) {
                 link.res.headers['X-Mono-CRUD-Count'] = count.toString();
@@ -198,21 +198,21 @@ exports.find = function (link, dbReq, callback) {
 // write
 exports.update = function (link, dbReq, callback) {
     
-    dbReq.template._crud.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
+    dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
         response(link, err, updItem, callback);
     });
 };
 
 exports.insert = function (link, dbReq, callback) {
     
-    dbReq.template._crud.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
+    dbReq.template._modm.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
         response(link, err, newItem, callback);
     });
 };
 
 exports.remove = function (link, dbReq, callback) {
 
-    dbReq.template._crud.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
+    dbReq.template._modm.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
         response(link, err, numOfRmDocs, callback);
     });
 };
