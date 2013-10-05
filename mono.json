@@ -3,7 +3,8 @@
     "owner": "jillix",
     "name": "crud",
     "dependencies": [
-        "/client.js"
+        "/client.js",
+        "github/adioo/flow/v0.1.0"
     ],
     "operations": [
         { "file": "operations.js", "function": "find" },

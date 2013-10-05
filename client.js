@@ -1,10 +1,16 @@
 M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
-    
-var methods = ['find','remove','update','insert'];
-var templateId = '000000000000000000000000';
 
-// cache templates
+var Flow = require('github/adioo/flow');
+var templateId = '000000000000000000000000';
 var templateCache = {};
+
+// internal event flow
+var internalFlow = {
+    find: ['find'],
+    remove: ['remove'],
+    update: ['update'],
+    insert: ['insert']
+};
 
 // merge linked templates
 function mergeTemplates (templates) {
@@ -39,7 +45,6 @@ function mergeTemplates (templates) {
     }
 }
 
-// TODO callback buffering
 function templateHandler (templates, callback, ignoreLinks) {
     var self = this;
     
@@ -108,10 +113,11 @@ function getTemplatesArray (query) {
     return query;
 }
 
+// TODO handle caching
+// TODO callback buffering
 function fetchTemplates (data, callback, ignoreLinks) {
     var self = this;
     
-    // TODO handle caching
     if (data instanceof Array) {
         data = {
             t: templateId,
@@ -129,62 +135,41 @@ function fetchTemplates (data, callback, ignoreLinks) {
     });
 }
 
-var miidCache = {};
+function handler (method, data, callback) {
+    var self = this;
+    
+    self.link(method, {data: data}, callback);
+}
 
-function methodHandler (self, method) {
-    return function (data, callback) {
-        if (typeof data === 'function' || !data) {
-            return;
-        }
+var publicMethods = {
+    find: function (data, callback) {
         
         // handle template requests
-        if (method === 'find' && (data instanceof Array || data.t === templateId)) {
+        if (data instanceof Array || data.t === templateId) {
             return fetchTemplates.call(self, data, callback);
         }
         
-        self.link(method, {data: data}, callback);
-    };
-}
-
-function listenHandler (self) {
-    return function (listenMiids) {
-        setupListen.call(self, listenMiids);
-    };
-}
-
-function setupListen (listen) {
-    var self = this;
-    
-    // listen to crud events
-    if (listen instanceof Array) {
-        for (var i = 0, l = listen.length; i < l; ++i) {
-            
-            // skip if crud already listen
-            if (miidCache[listen[i]]) {
-                continue;
-            }
-            
-            miidCache[listen[i]] = 1;
-            
-            for (var ii = 0, ll = methods.length; ii < ll; ++ii) {
-                self.on(methods[ii], listen[i], methodHandler(self, methods[ii]));
-            }
-            
-            self.on('listenTo', listen[i], listenHandler(self));
-        }
+        handler('find', data, callback);
+    },
+    remove: function (data, callback) {
+        handler('find', data, callback);
+    },
+    update: function (data, callback) {
+        handler('find', data, callback);
+    },
+    insert: function (data, callback) {
+        handler('find', data, callback);
     }
-}
+};
 
 function init (config) {
     var self = this;
     
-    // listen to crud events
-    setupListen.call(self, config.listen);
+    Flow(self, publicMethods, internalFlow, config.flow);
 
     self.emit('ready');
 }
 
 module.exports = init;
-
 
 return module; });
