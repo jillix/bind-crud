@@ -138,22 +138,26 @@ function handler (method, data, callback) {
 
 var publicMethods = {
     _find: function (data, callback) {
+        var self =  this;
         
         // handle template requests
         if (data instanceof Array || data.t === templateId) {
             return fetchTemplates.call(self, data, callback);
         }
         
-        handler('find', data, callback);
+        handler.call(self, 'find', data, callback);
     },
     _remove: function (data, callback) {
-        handler('remove', data, callback);
+        var self = this;
+        handler.call(self, 'remove', data, callback);
     },
     _update: function (data, callback) {
-        handler('update', data, callback);
+        var self = this;
+        handler.call(self, 'update', data, callback);
     },
     _insert: function (data, callback) {
-        handler('insert', data, callback);
+        var self = this;
+        handler.call(self, 'insert', data, callback);
     }
 };
 
