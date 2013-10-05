@@ -1,16 +1,11 @@
-M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
+M.wrap('github/jillix/crud/test/client.js', function (require, module, exports) {
 
 var Flow = require('github/adioo/flow');
 var templateId = '000000000000000000000000';
 var templateCache = {};
 
 // internal event flow
-var internalFlow = {
-    find: ['find'],
-    remove: ['remove'],
-    update: ['update'],
-    insert: ['insert']
-};
+var internalFlow = null;
 
 // merge linked templates
 function mergeTemplates (templates) {
@@ -142,7 +137,7 @@ function handler (method, data, callback) {
 }
 
 var publicMethods = {
-    find: function (data, callback) {
+    _find: function (data, callback) {
         
         // handle template requests
         if (data instanceof Array || data.t === templateId) {
@@ -151,14 +146,14 @@ var publicMethods = {
         
         handler('find', data, callback);
     },
-    remove: function (data, callback) {
-        handler('find', data, callback);
+    _remove: function (data, callback) {
+        handler('remove', data, callback);
     },
-    update: function (data, callback) {
-        handler('find', data, callback);
+    _update: function (data, callback) {
+        handler('update', data, callback);
     },
-    insert: function (data, callback) {
-        handler('find', data, callback);
+    _insert: function (data, callback) {
+        handler('insert', data, callback);
     }
 };
 
