@@ -40,7 +40,7 @@ function mergeTemplates (templates) {
 }
 
 // TODO callback buffering
-function templateHandler (templates, callback) {
+function templateHandler (templates, callback, ignoreLinks) {
     var self = this;
     
     // check callback
@@ -60,14 +60,15 @@ function templateHandler (templates, callback) {
             // save template in cache
             templateCache[_id] = templates[i];
             
-            templates[i].linked = {};
-            for (var field in templates[i].schema) {
-                
-                // collect linked templates
-                if (templates[i].schema[field].link) {
-                    // TODO prevent circular links
-                    templates[i].linked[field] = templates[i].schema[field];
-                    linkedTemplates.push(templates[i].schema[field].link);
+            if (!ignoreLinks) {
+                templates[i].linked = {};
+                for (var field in templates[i].schema) {
+                    
+                    // collect linked templates
+                    if (templates[i].schema[field].link) {
+                        templates[i].linked[field] = templates[i].schema[field];
+                        linkedTemplates.push(templates[i].schema[field].link);
+                    }
                 }
             }
         }
@@ -84,14 +85,15 @@ function templateHandler (templates, callback) {
             mergeTemplates(templates);
             
             callback(null, templates);
-        });
+        
+        // ignore fetching linked templates on linked templates (only 1 level)
+        }, true);
     } else {
         callback(null, templates);
     }
 }
 
-// TODO this function is needed for caching
-/*function getTemplatesArray (query) {
+function getTemplatesArray (query) {
     
     // fetch a single tempalte
     if (typeof query._id === 'string') {
@@ -104,9 +106,9 @@ function templateHandler (templates, callback) {
     }
     
     return query;
-}*/
+}
 
-function fetchTemplates (data, callback) {
+function fetchTemplates (data, callback, ignoreLinks) {
     var self = this;
     
     // TODO handle caching
@@ -123,7 +125,7 @@ function fetchTemplates (data, callback) {
             return callback(err);
         }
         
-        templateHandler.call(self, templates, callback);
+        templateHandler.call(self, templates, callback, ignoreLinks);
     });
 }
 
