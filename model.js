@@ -76,7 +76,7 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
         for (var key in obj) {
             // ignore nulls
             // $exists also does not need convertion of values
-            if (obj[i] === null || key === '$exists') {
+            if (obj[key] === null || key === '$exists') {
                 continue;
             }
 

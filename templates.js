@@ -59,7 +59,6 @@ templateCache[config.templateId]._crud.collection = templateCache[config.templat
 
 var privateFields = {
     _crud: 1,
-    _id: 0,
     _tp: 1,
     _li: 1,
     linkedFields: 1
@@ -136,7 +135,8 @@ function initAndCache (template) {
         }
     }
     
-    return templateCache[template._id] = template;
+    templateCache[template._id] = template;
+    return templateCache[template._id];
 }
 
 function getCachedTemplates (templates, role, method) {
@@ -214,7 +214,6 @@ function fetchTemplates (request, callback) {
     dbReq.query['_crud.roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
     
     // fetch requested templates from db
-    //console.log(dbReq.query, dbReq.options);
     io.find(null, dbReq, function (err, cursor) {
 
         if (err) {
@@ -303,10 +302,6 @@ function getMergeTemplates (request, role, callback) {
 // called from the getTempaltes operation
 function getTemplates (request, callback) {
     
-    // cache return fields
-    var fields = request.options.fields;
-    
-    //var myRoleString = request.role ? requesresult[id][field] = templates[id][field];t.role.toString() : '';
     fetchTemplates(request, function (err, templates) {
 
         if (err) {
@@ -319,15 +314,8 @@ function getTemplates (request, callback) {
             result[i] = {};
             
             for (var field in templates[i]) {
-                
                 if (!privateFields[field]) {
-                    if (fields) {
-                        if (fields[field]) {
-                            result[i][field] = templates[i][field];
-                        }
-                    } else {
-                        result[i][field] = templates[i][field];
-                    }
+                    result[i][field] = field === 'schema' ? templates[i][field].paths : templates[i][field];
                 }
             }
         }

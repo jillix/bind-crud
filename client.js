@@ -1,6 +1,7 @@
 M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
     
 var methods = ['find','remove','update','insert'];
+var templateId = '000000000000000000000000';
 
 // cache templates
 var templateCache = {};
@@ -36,88 +37,118 @@ function mergeTemplates (templates) {
             }
         }
     }
-    
-    return templates;
 }
 
 // TODO callback buffering
 function templateHandler (templates, callback) {
     var self = this;
     
-    console.error(arguments);
-    // TODO
-    // - get templates from query
-    // -- check cache then fetch
-    // - if empty fetch all
-    // -- fetch than check cache
-    
     // check callback
     if (typeof callback !== 'function') {
         return;
     }
     
-    // collect cached templates and templates to load.
-    var resultTemplates = {};
-    var templatesToFetch = [];
-    for (var i = 0, l = templates.length; i < l; ++i) {
-        if (templateCache[templates[i]]) {
-            resultTemplates[templates[i]] = templateCache[templates[i]];
-        } else {
-            templatesToFetch.push(templates[i]);
+    // collect templates from linked schema fields
+    var linkedTemplates = [];
+    
+    for (var i = 0, l = templates.length, _id; i < l; ++i) {
+        
+        _id = templates[i]._id;
+        
+        if (!templateCache[_id]) {
+            
+            // save template in cache
+            templateCache[_id] = templates[i];
+            
+            templates[i].linked = {};
+            for (var field in templates[i].schema) {
+                
+                // collect linked templates
+                if (templates[i].schema[field].link) {
+                    // TODO prevent circular links
+                    templates[i].linked[field] = templates[i].schema[field];
+                    linkedTemplates.push(templates[i].schema[field].link);
+                }
+            }
         }
     }
     
-    // fetch templates from server
-    if (templates.length === 0 || templatesToFetch.length > 0) {
-        self.link('find', {data: templatesToFetch}, function (err, templates) {
-
+    // fetch linked templates
+    if (linkedTemplates.length > 0) {
+        fetchTemplates.call(self, linkedTemplates, function (err) {
+            
             if (err) {
                 return callback(err);
             }
             
-            var linkedTemplates = [];
+            mergeTemplates(templates);
             
-            // merge fetched templates into result templates
-            for (var template in templates) {
-                
-                resultTemplates[template] = templateCache[template] = templates[template];
-                templates[template].linked = {};
-                
-                for (var field in templates[template].schema) {
-                    
-                    // collect linked templates
-                    if (templates[template].schema[field].link) {
-                        templates[template].linked[field] = templates[template].schema[field];
-                        linkedTemplates.push(templates[template].schema[field].link);
-                    }
-                }
-            }
-            
-            // fetch linked templates
-            if (linkedTemplates.length > 0) {
-                templateHandler.call(self, linkedTemplates, function (err) {
-                    
-                    if (err) {
-                        return callback(err);
-                    }
-                    
-                    mergeTemplates(templates);
-                    
-                    callback(null, resultTemplates);
-                });
-            } else {
-                callback(null, resultTemplates);
-            }
+            callback(null, templates);
         });
-        
-    // return cached templates
     } else {
-        console.error('trucken');
-        callback(null, resultTemplates);
+        callback(null, templates);
     }
 }
 
+// TODO this function is needed for caching
+/*function getTemplatesArray (query) {
+    
+    // fetch a single tempalte
+    if (typeof query._id === 'string') {
+        return [query._id];
+    }
+    
+    // fetch multiple templates
+    if (query._id.$in) {
+        return query._id.$in;
+    }
+    
+    return query;
+}*/
+
+function fetchTemplates (data, callback) {
+    var self = this;
+    
+    // TODO handle caching
+    if (data instanceof Array) {
+        data = {
+            t: templateId,
+            q: {_id: {$in: data}}
+        };
+    }
+    
+    self.link('find', {data: data}, function (err, templates) {
+        
+        if (err) {
+            return callback(err);
+        }
+        
+        templateHandler.call(self, templates, callback);
+    });
+}
+
 var miidCache = {};
+
+function methodHandler (self, method) {
+    return function (data, callback) {
+        if (typeof data === 'function' || !data) {
+            return;
+        }
+        
+        // handle template requests
+        if (method === 'find' && (data instanceof Array || data.t === templateId)) {
+            return fetchTemplates.call(self, data, callback);
+        }
+        
+        self.link(method, {data: data}, callback);
+    };
+}
+
+function listenHandler (self) {
+    return function (listenMiids) {
+        setupListen.call(self, listenMiids);
+    };
+}
 
 function setupListen (listen) {
     var self = this;
@@ -134,28 +165,10 @@ function setupListen (listen) {
             miidCache[listen[i]] = 1;
             
             for (var ii = 0, ll = methods.length; ii < ll; ++ii) {
-                self.on(methods[ii], listen[i], (function (method) {    
-                    return function (data, callback) {
-                        if (typeof data === 'function') {
-                            callback = data;
-                            data = null;
-                        }
-                        
-                        // handle template requests
-                        /*if (method === 'find' && data && data.t === '000000000000000000000000') {
-                            if (!Object.keys(data.q).length || data.q._id) {
-                                return templateHandler.call(self, data, callback);
-                            }
-                        }*/
-                        
-                        self.link(method, {data: data}, callback);
-                    };
-                })(methods[ii]));
+                self.on(methods[ii], listen[i], methodHandler(self, methods[ii]));
             }
             
-            self.on('listenTo', listen[i], function (listenMiids) {
-                setupListen.call(self, listenMiids);
-            });
+            self.on('listenTo', listen[i], listenHandler(self));
         }
     }
 }
