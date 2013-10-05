@@ -208,9 +208,7 @@ function doDbReqeust (link, request) {
     // emit a server event
     if (request.template.on && request.template.on[request.method]) {
         for (var event in request.template.on[request.method]) {
-            var copy = request.template.on[request.method][event].slice();
-            copy.splice(0, 0, event, request);
-            M.emit.apply(M, copy);
+            M.emit.apply(M, request.template.on[request.method][event].slice().splice(0, 0, event, request));
         }
     }
 

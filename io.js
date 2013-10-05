@@ -77,6 +77,68 @@ function sendJointResult (link, result, sort, callback) {
     callback ? callback(err, result) : link.send(200, items);
 }
 
+function jointRequest (dbReq, jointDbReq, link, result, callback) {
+    jointDbReq.template.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
+        
+        // ignore query when no items in result
+        if (result.length === 0) {
+            if (++current === dbReq.jointsLength) {
+                sendJointResult(link, result, dbReq.options.sort, callback);
+            }
+            return;
+        }
+        
+        if (err) {
+            if (++current === dbReq.jointsLength) {
+                sendJointResult(link, result, dbReq.options.sort, callback);
+            }
+        }
+        
+        cursor.toArray(function (err, jointResult) {
+        
+            if (err) {
+                if (++current === dbReq.jointsLength) {
+                    sendJointResult(link, result, dbReq.options.sort, callback);
+                }
+            }
+            
+            // set empty result if no items found
+            if (jointResult.length === 0) {
+                result = [];
+                if (++current === dbReq.jointsLength) {
+                    sendJointResult(link, result, dbReq.options.sort, callback);
+                }
+            }
+            
+            // create joint object
+            var jointData = {};
+            for (var i = 0, l = jointResult.length; i < l; ++i) {
+                jointData[jointResult[i]._id] = jointResult[i];
+            }
+            
+            // merge linkd data
+            for (var i = 0, l = result.length; i < l; ++i) {
+                
+                if (
+                    result[i] && 
+                    result[i][jointDbReq.merge] &&
+                    jointData[result[i][jointDbReq.merge]] &&
+                    jointData[result[i][jointDbReq.merge]]._id.toString() === result[i][jointDbReq.merge].toString()
+                ) {
+                    // merge linked data in result field
+                    result[i][jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
+                } else {
+                    result[i] = null;
+                }
+            }
+            
+            if (++current === dbReq.jointsLength) {
+                sendJointResult(link, result, dbReq.options.sort, callback);
+            }
+        });
+    });
+}
+
 function jointResponse (link, dbReq, cursor, callback) {
     
     cursor.toArray(function (err, result) {
@@ -107,67 +169,7 @@ function jointResponse (link, dbReq, cursor, callback) {
             }
             
             // get linked data
-            (function (jointDbReq) {
-                jointDbReq.template.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
-                    
-                    // ignore query when no items in result
-                    if (result.length === 0) {
-                        if (++current === dbReq.jointsLength) {
-                            sendJointResult(link, result, dbReq.options.sort, callback);
-                        }
-                        return;
-                    }
-                    
-                    if (err) {
-                        if (++current === dbReq.jointsLength) {
-                            sendJointResult(link, result, dbReq.options.sort, callback);
-                        }
-                    }
-                    
-                    cursor.toArray(function (err, jointResult) {
-                    
-                        if (err) {
-                            if (++current === dbReq.jointsLength) {
-                                sendJointResult(link, result, dbReq.options.sort, callback);
-                            }
-                        }
-                        
-                        // set empty result if no items found
-                        if (jointResult.length === 0) {
-                            result = [];
-                            if (++current === dbReq.jointsLength) {
-                                sendJointResult(link, result, dbReq.options.sort, callback);
-                            }
-                        }
-                        
-                        // create joint object
-                        var jointData = {};
-                        for (var i = 0, l = jointResult.length; i < l; ++i) {
-                            jointData[jointResult[i]._id] = jointResult[i];
-                        }
-                        
-                        // merge linkd data
-                        for (var i = 0, l = result.length; i < l; ++i) {
-                            
-                            if (
-                                result[i] && 
-                                result[i][jointDbReq.merge] &&
-                                jointData[result[i][jointDbReq.merge]] &&
-                                jointData[result[i][jointDbReq.merge]]._id.toString() === result[i][jointDbReq.merge].toString()
-                            ) {
-                                // merge linked data in result field
-                                result[i][jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
-                            } else {
-                                result[i] = null;
-                            }
-                        }
-                        
-                        if (++current === dbReq.jointsLength) {
-                            sendJointResult(link, result, dbReq.options.sort, callback);
-                        }
-                    });
-                });
-            })(dbReq.joints[joint]);
+            jointRequest(dbReq, dbReq.joints[joint], link, result, callback);
         }
     });
 }
