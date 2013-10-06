@@ -141,10 +141,10 @@ var publicMethods = {
     }
 };
 
-function init (config) {
+function init (externalFlow) {
     var self = this;
     
-    Flow(self, publicMethods, null, config.flow);
+    Flow(self, publicMethods, externalFlow);
 
     self.emit('ready');
 }
