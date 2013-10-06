@@ -5,36 +5,42 @@ var templateId = '000000000000000000000000';
 var templateCache = {};
 
 // merge linked templates
-function mergeTemplates (templates) {
+function mergeTemplates (templates, callback) {
     var self = this;
     
-    for (var template in templates) {
-        for (var link in templates[template].linked) {
+    for (var i = 0, l = templates.length, template; i < l; ++i) {
+        for (var link in templates[i].linked) {
             
-            if (templateCache[templates[template].linked[link].link]) {
+            template = templates[i].linked[link].link;
+            
+            if (templateCache[template]) {
                 
                 // merge linked schema
-                for (var field in templateCache[templates[template].linked[link].link].schema) {
+                for (var field in templateCache[template].schema) {
                     if (field[0] !== '_') {
-                        templates[template].schema[link + '.' + field] = templateCache[templates[template].linked[link].link].schema[field];
+                        templates[i].schema[link + '.' + field] = templateCache[template].schema[field];
                     }
                 }
                 
                 // hide link field
-                templates[template].schema[link].hidden = true;
-                templates[template].schema[link].noSearch = true;
-            }
-            
-            // merge linked schema config
-            if (templates[template].schema[link].fields) {
-                for (var linkedField in templates[template].schema[link].fields) {
-                    for (var option in templates[template].schema[link].fields[linkedField]) {
-                        templates[template].schema[link + '.' + linkedField][option] = templates[template].schema[link].fields[linkedField][option];
+                templates[i].schema[link].hidden = true;
+                templates[i].schema[link].noSearch = true;
+                
+                // merge linked schema config
+                if (templates[i].schema[link].fields) {
+                    for (var linkedField in templates[i].schema[link].fields) {
+                        for (var option in templates[i].schema[link].fields[linkedField]) {
+                            templates[i].schema[link + '.' + linkedField][option] = templates[i].schema[link].fields[linkedField][option];
+                        }
                     }
                 }
+            } else {
+                return callback(new Error('Template ' + template + ' not in cache.'));
             }
         }
     }
+    
+    callback(null, templates);
 }
 
 function templateHandler (templates, callback, ignoreLinks) {
@@ -79,30 +85,13 @@ function templateHandler (templates, callback, ignoreLinks) {
                 return callback(err);
             }
             
-            mergeTemplates(templates);
-            
-            callback(null, templates);
+            mergeTemplates(templates, callback);
         
         // ignore fetching linked templates on linked templates (only 1 level)
         }, true);
     } else {
         callback(null, templates);
     }
-}
-
-function getTemplatesArray (query) {
-    
-    // fetch a single tempalte
-    if (typeof query._id === 'string') {
-        return [query._id];
-    }
-    
-    // fetch multiple templates
-    if (query._id.$in) {
-        return query._id.$in;
-    }
-    
-    return query;
 }
 
 // TODO handle caching
@@ -127,12 +116,6 @@ function fetchTemplates (data, callback, ignoreLinks) {
     });
 }
 
-function handler (method, data, callback) {
-    var self = this;
-    
-    self.link(method, {data: data}, callback);
-}
-
 var publicMethods = {
     _find: function (data, callback) {
         var self =  this;
@@ -142,19 +125,19 @@ var publicMethods = {
             return fetchTemplates.call(self, data, callback);
         }
         
-        handler.call(self, 'find', data, callback);
+        self.link('find', {data: data}, callback);
     },
     _remove: function (data, callback) {
         var self = this;
-        handler.call(self, 'remove', data, callback);
+        self.link('remove', {data: data}, callback);
     },
     _update: function (data, callback) {
         var self = this;
-        handler.call(self, 'update', data, callback);
+        self.link('update', {data: data}, callback);
     },
     _insert: function (data, callback) {
         var self = this;
-        handler.call(self, 'insert', data, callback);
+        self.link('insert', {data: data}, callback);
     }
 };
 
