@@ -3,19 +3,25 @@ crud
 
 CRUD for mono
 
-####Example config:
+####Example config with flow:
 
 ```
-listen: ["MIID1", "MIID2", ...]
+flow: {
+    myMiid: {
+        myEvent: ['_find', 'update', 'insert', 'remove']
+    }
+}
 ```
 
-This CRUD module will listen for `find`, `update`, `insert`, and `remove` events comming from these modules
-and forward their requests to the server. All these events must have two parameters:
+All these events must have two parameters:
 
- * the **CRUD object** defined by the CRUD module. See **example below**.
+ * the **CRUD object** defined by the CRUD module. See **example request data**.
  * the **callback** to be called with the results when the operation completes.
 
-There is also a `getTemplates` event which fetches template data. Pass an array with template names as first parameters and the callback as second.
+####Fetch templates
+If an array is send to `self.emit('_find')` as data CRUD will fetch the templates inside the array.
+Normal queries for templates are working also.
+Templates are always initialized before returned.
 
 ####Example request data:
 ```js
