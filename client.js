@@ -4,9 +4,6 @@ var Flow = require('github/adioo/flow');
 var templateId = '000000000000000000000000';
 var templateCache = {};
 
-// internal event flow
-var internalFlow = null;
-
 // merge linked templates
 function mergeTemplates (templates) {
     var self = this;
@@ -164,7 +161,7 @@ var publicMethods = {
 function init (config) {
     var self = this;
     
-    Flow(self, publicMethods, internalFlow, config.flow);
+    Flow(self, publicMethods, null, config.flow);
 
     self.emit('ready');
 }
