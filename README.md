@@ -19,7 +19,7 @@ All these events must have two parameters:
  * the **callback** to be called with the results when the operation completes.
 
 ####Fetch templates
-If an array is send to `self.emit('_find')` as data CRUD will fetch the templates inside the array.
+If an array is send to `self.emit('read')` as data CRUD will fetch the templates inside the array.
 Normal queries for templates are working also.
 Templates are always initialized before returned.
 
@@ -71,16 +71,16 @@ myTemplate = {
     },
     // plug custom code
     on: {
-        find: {
+        create: {
             myCustomEventA: [arg1, argN]
         },
-        insert: {
+        read: {
             myCustomEventB: [arg1, argN]
         },
         update: {
             myCustomEventC: [arg1, argN]
         },
-        remove: {
+        delete: {
             myCustomEventD: [arg1, argN]
         }
     },
