@@ -116,7 +116,7 @@ function fetchTemplates (data, callback, ignoreLinks) {
     });
 }
 
-var publicMethods = {
+var methods = {
     _find: function (data, callback) {
         var self =  this;
         
@@ -141,10 +141,10 @@ var publicMethods = {
     }
 };
 
-function init (externalFlow) {
+function init (eventFlow) {
     var self = this;
     
-    Flow(self, publicMethods, externalFlow);
+    Flow(self, methods, eventFlow);
 
     self.emit('ready');
 }
