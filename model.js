@@ -28,7 +28,7 @@ function createRequest (method, link) {
     if (data.d && data.d.constructor.name === 'Object') {
 
         // set type
-        if (method === 'insert') {
+        if (method === 'create') {
             data.d._tp = data.t;
         }
 
@@ -234,7 +234,7 @@ module.exports = function (method, link) {
         }
         
         // sepecial handler for template requests
-        if (method === 'find' && request.templateId === templates.templateId.toString()) {
+        if (method === 'read' && request.templateId === templates.templateId.toString()) {
             return templates.getTemplates(request, function (err, result) {
                     
                     if (err) {
@@ -251,7 +251,7 @@ module.exports = function (method, link) {
             request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
             
             // add role access to item
-            if (method === 'insert') {
+            if (method === 'create') {
                 request.data.roles = {};
                 request.data.roles[request.role] = {access: request.template.itemAccess};
             }
@@ -265,7 +265,7 @@ module.exports = function (method, link) {
         }
         
         // make joins only on find requests and when template has linked fields
-        if (method === 'find' && request.template.linkedFields && !request.noJoins) {
+        if (method === 'read' && request.template.linkedFields && !request.noJoins) {
             createJoints(request, function (err, joints, length) {
                 
                 if (err) {

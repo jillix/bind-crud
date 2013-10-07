@@ -1,18 +1,35 @@
 var model = require('./model');
-var templates = require('./templates');
 
-exports.find = function (link) {
-    model('find', link);
+// operations
+exports.read = function (link) {
+    model('read', link);
 };
 
-exports.remove = function (link) {
-    model('remove', link);
+exports.delete = function (link) {
+    model('delete', link);
 };
 
 exports.update = function (link) {
     model('update', link);
 };
 
-exports.insert = function (link) {
-    model('insert', link);
+exports.create = function (link) {
+    model('create', link);
 };
+
+// listeners
+M.on('crud_read', function (link) {
+    model('create', link);
+});
+
+M.on('crud_delete', function (link) {
+    model('delete', link);
+});
+
+M.on('crud_update', function (link) {
+    model('update', link);
+});
+
+M.on('crud_create', function (link) {
+    model('create', link);
+});

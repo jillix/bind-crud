@@ -175,7 +175,7 @@ function jointResponse (link, dbReq, cursor, callback) {
 }
 
 // read
-exports.find = function (link, dbReq, callback) {
+exports.read = function (link, dbReq, callback) {
     
     // get data and count
     dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
@@ -203,14 +203,14 @@ exports.update = function (link, dbReq, callback) {
     });
 };
 
-exports.insert = function (link, dbReq, callback) {
+exports.create = function (link, dbReq, callback) {
     
     dbReq.template._modm.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
         response(link, err, newItem, callback);
     });
 };
 
-exports.remove = function (link, dbReq, callback) {
+exports.delete = function (link, dbReq, callback) {
 
     dbReq.template._modm.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
         response(link, err, numOfRmDocs, callback);

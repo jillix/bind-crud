@@ -66,13 +66,13 @@ var privateFields = {
 
 function getAccessKey (method) {
     switch (method) {
-        case 'find':
+        case 'read':
             return 'r';
         case 'update':
             return 'u';
-        case 'insert':
+        case 'create':
             return 'c';
-        case 'remove':
+        case 'delete':
             return 'd';
     }
 }
@@ -216,7 +216,7 @@ function fetchTemplates (request, callback) {
     dbReq.query['roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
     
     // fetch requested templates from db
-    io.find(null, dbReq, function (err, cursor) {
+    io.read(null, dbReq, function (err, cursor) {
         
         if (err) {
             err.statusCode = 500;
@@ -288,7 +288,7 @@ function getMergeTemplates (request, role, callback) {
     request = {
         query: request.length ? request : [],
         role: role,
-        method: 'find'
+        method: 'read'
     };
     
     fetchTemplates(request, function (err, templates) {
@@ -321,7 +321,7 @@ function getTemplates (request, callback) {
                 admin = true;
             }
             
-            // remove private fields from result templates
+            // delete private fields from result templates
             for (var field in templates[i]) {
                 if ((admin || !privateFields[field]) && field !== '_modm') {
                     result[i][field] = templates[i][field];

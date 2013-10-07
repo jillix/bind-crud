@@ -1,6 +1,5 @@
 M.wrap('github/jillix/crud/test/client.js', function (require, module, exports) {
 
-var Flow = require('github/adioo/flow');
 var templateId = '000000000000000000000000';
 var templateCache = {};
 
@@ -35,7 +34,7 @@ function mergeTemplates (templates, callback) {
                     }
                 }
             } else {
-                return callback(new Error('Template ' + template + ' not in cache.'));
+                return callback(new Error(self.miid + '|crud: Template ' + template + ' not in cache.'));
             }
         }
     }
@@ -106,7 +105,7 @@ function fetchTemplates (data, callback, ignoreLinks) {
         };
     }
     
-    self.link('find', {data: data}, function (err, templates) {
+    self.link('read', {data: data}, function (err, templates) {
         
         if (err) {
             return callback(err);
@@ -116,39 +115,50 @@ function fetchTemplates (data, callback, ignoreLinks) {
     });
 }
 
-var methods = {
-    _find: function (data, callback) {
-        var self =  this;
-        
-        // handle template requests
-        if (data instanceof Array || data.t === templateId) {
-            return fetchTemplates.call(self, data, callback);
-        }
-        
-        self.link('find', {data: data}, callback);
-    },
-    _remove: function (data, callback) {
-        var self = this;
-        self.link('remove', {data: data}, callback);
-    },
-    _update: function (data, callback) {
-        var self = this;
-        self.link('update', {data: data}, callback);
-    },
-    _insert: function (data, callback) {
-        var self = this;
-        self.link('insert', {data: data}, callback);
-    }
-};
-
-function init (eventFlow) {
+function setTemplate (template, noRefresh) {
     var self = this;
     
-    Flow(self, methods, eventFlow);
-
-    self.emit('ready');
+    // fetch template
+    self.emit('read', [template], function (err, templates) {
+        
+        if (err || !templates || !templates[0]) {
+            return callback(err || new Error(self.miid + '|crud: Template not found.'));
+        }
+        
+        // save current template
+        self.template = templates[0];
+        
+        if (!noRefresh) {
+            self.emit('_refresh');
+        }
+        
+        self.emit('templateSet', self.template);
+    });
 }
 
-module.exports = init;
+function handler (method, data, callback) {
+    var self = this;
+    
+    // check query data
+    if (!data) {
+        return self.emit('crudError', err || new Error(self.miid + '|crud: No data for query.'));
+    }
+    
+    // check if a template id is available
+    if (!data.t && (!self.template || !self.template._id)) {
+        return callback(err || new Error(self.miid + '|crud: No template id for query.'));
+    }
+    
+    // get template id for request
+    data.t = data.t || self.template._id;
+    
+    // do request
+    self.link(method, {data: data}, callback);
+}
+
+exports.handler = handler;
+exports.fetchTemplates = fetchTemplates;
+exports.setTemplate = setTemplate;
+exports.templateId = templateId;
 
 return module; });

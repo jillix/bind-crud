@@ -3,13 +3,14 @@
     "owner": "jillix",
     "name": "crud",
     "dependencies": [
+        "/crud.js",
         "/client.js",
         "github/adioo/flow/v0.1.0"
     ],
     "operations": [
-        { "file": "operations.js", "function": "find" },
-        { "file": "operations.js", "function": "remove" },
+        { "file": "operations.js", "function": "read" },
+        { "file": "operations.js", "function": "delete" },
         { "file": "operations.js", "function": "update" },
-        { "file": "operations.js", "function": "insert" }
+        { "file": "operations.js", "function": "create" }
     ]
 }
