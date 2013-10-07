@@ -6,7 +6,7 @@ CRUD for mono
 ####Example config with flow:
 
 ```
-flow: {
+config: {
     myMiid: {
         myEvent: ['_find', 'update', 'insert', 'remove']
     }
