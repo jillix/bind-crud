@@ -1,4 +1,4 @@
-M.wrap('github/jillix/crud/test/crud.js', function (require, module, exports) {
+M.wrap('github/jillix/crud/dev/crud.js', function (require, module, exports) {
 
 var Flow = require('github/adioo/flow');
 var client = require('./client');

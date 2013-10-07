@@ -1,4 +1,4 @@
-M.wrap('github/jillix/crud/test/client.js', function (require, module, exports) {
+M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
 
 var templateId = '000000000000000000000000';
 var templateCache = {};
