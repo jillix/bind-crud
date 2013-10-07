@@ -129,7 +129,7 @@ function setTemplate (template, noRefresh) {
         self.template = templates[0];
         
         if (!noRefresh) {
-            self.emit('_refresh');
+            self.emit('refresh');
         }
         
         self.emit('templateSet', self.template);
