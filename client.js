@@ -107,8 +107,8 @@ function fetchTemplates (data, callback, ignoreLinks) {
     
     self.link('read', {data: data}, function (err, templates) {
         
-        if (err) {
-            return callback(err);
+        if (err || data.noMerge) {
+            return callback(err, templates);
         }
         
         templateHandler.call(self, templates, callback, ignoreLinks);
