@@ -115,24 +115,35 @@ function fetchTemplates (data, callback, ignoreLinks) {
     });
 }
 
+function setTemplateHandler (template, noRefresh) {
+    var self = this;
+    
+    // save current template
+    self.template = templates[0];
+    
+    if (!noRefresh) {
+        self.emit('refresh');
+    }
+    
+    self.emit('templateSet', self.template);
+}
+
 function setTemplate (template, noRefresh) {
     var self = this;
+    
+    // check cache
+    if (templateCache[template]) {
+        return setTemplateHandler.call(self, [templateCache[template]], noRefresh);
+    }
     
     // fetch template
     self.emit('read', [template], function (err, templates) {
         
         if (err || !templates || !templates[0]) {
-            return callback(err || new Error(self.miid + '|crud: Template not found.'));
+            return self.emit('crudError', err || new Error(self.miid + '|crud: Template not found.'));
         }
         
-        // save current template
-        self.template = templates[0];
-        
-        if (!noRefresh) {
-            self.emit('refresh');
-        }
-        
-        self.emit('templateSet', self.template);
+        setTemplateHandler.call(self, templates, noRefresh);
     });
 }
 
