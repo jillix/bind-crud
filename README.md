@@ -8,7 +8,7 @@ CRUD for mono
 ```
 config: {
     myMiid: {
-        myEvent: ['_find', 'update', 'insert', 'remove']
+        myEvent: ['read', 'update', 'create', 'delete']
     }
 }
 ```
