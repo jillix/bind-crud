@@ -33,7 +33,11 @@ Templates are always initialized before returned.
     // the document object (updates) in MongoDB format
     d: {/*update document*/},
     // the CRUD operation options in node-monogdb-native (NodeJs MongoDb driver) format
-    o: {/*options*/}
+    o: {/*options*/},
+    // don't make joins
+    noJoins: true,
+    // don't merge template
+    noMerge: true
 }
 ```
 
