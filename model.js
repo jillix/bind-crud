@@ -108,7 +108,6 @@ function createJoints (request, callback) {
         // schema paths to validate field in linked schema
         if (!linkedTemplatesToLoad[schema[field].link]) {
             linkedTemplatesToLoad[schema[field].link] = {
-                fields: {},
                 query: {},
                 merge: field
             };
@@ -120,10 +119,14 @@ function createJoints (request, callback) {
                 if (returnField.indexOf(field) === 0) {
                     if (returnFields[returnField]) {
                         
+                        if (!linkedTemplatesToLoad[schema[field].link].fields) {
+                            linkedTemplatesToLoad[schema[field].link].fields = {};
+                        }
+                        
                         // collect field on linked template
                         linkedTemplatesToLoad[schema[field].link].fields[returnField.substr(field.length + 1)] = 1;
                         
-                        // lined field is needed to merge the data
+                        // linked field is needed to merge the data
                         request.options.fields[field] = 1;
                     }
                 // get fields of local template
@@ -131,6 +134,10 @@ function createJoints (request, callback) {
                     request.options.fields[returnField] = returnFields[returnField];
                 }
             }
+        }
+        
+        if (!linkedTemplatesToLoad[schema[field].link].fields) {
+            linkedTemplatesToLoad[schema[field].link].fields = {_tp: 0};
         }
         
         // get query for linked template
@@ -172,7 +179,7 @@ function createJoints (request, callback) {
                 merge: linkedTemplatesToLoad[fetchedTemplates[i]._id].merge
             };
             
-            // make sure _id gets always returned
+            // make sure _id is always returned
             if (returnFields) {
                 request.options.fields._id = 1;
             }
@@ -183,7 +190,7 @@ function createJoints (request, callback) {
             }
         }
         
-        callback(null, mergeRequests, mergeRequests.length);
+        callback(null, mergeRequests, fetchedTemplates.length);
     });
 }
 
@@ -278,9 +285,20 @@ module.exports = function (method, link) {
                     request.jointsLength = length;
                 }
                 
+                // hide _tp
+                if (!request.options.fields || Object.keys(request.options.fields).length === 0) {
+                    request.options.fields = {_tp: 0};
+                }
+                
                 doDbReqeust(link, request);
             });
         } else {
+            
+            // hide _tp
+            if (!request.options.fields || Object.keys(request.options.fields).length === 0) {
+                request.options.fields = {_tp: 0};
+            }
+            
             doDbReqeust(link, request);
         }
     });

@@ -78,36 +78,17 @@ function sendJointResult (link, result, sort, callback) {
 }
 
 function jointRequest (dbReq, jointDbReq, link, result, callback) {
-    jointDbReq.template.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
+    jointDbReq.template._modm.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
         
         // ignore query when no items in result
-        if (result.length === 0) {
-            if (++current === dbReq.jointsLength) {
-                sendJointResult(link, result, dbReq.options.sort, callback);
-            }
-            return;
-        }
-        
         if (err) {
-            if (++current === dbReq.jointsLength) {
-                sendJointResult(link, result, dbReq.options.sort, callback);
-            }
+            return callback(err);
         }
         
         cursor.toArray(function (err, jointResult) {
         
-            if (err) {
-                if (++current === dbReq.jointsLength) {
-                    sendJointResult(link, result, dbReq.options.sort, callback);
-                }
-            }
-            
-            // set empty result if no items found
-            if (jointResult.length === 0) {
-                result = [];
-                if (++current === dbReq.jointsLength) {
-                    sendJointResult(link, result, dbReq.options.sort, callback);
-                }
+            if (err || jointResult.length === 0) {
+                callback(err, empty);
             }
             
             // create joint object
@@ -132,15 +113,12 @@ function jointRequest (dbReq, jointDbReq, link, result, callback) {
                 }
             }
             
-            if (++current === dbReq.jointsLength) {
-                sendJointResult(link, result, dbReq.options.sort, callback);
-            }
+            callback();
         });
     });
 }
 
-function jointResponse (link, dbReq, cursor, callback) {
-    
+function jointResponse (link, dbReq, cursor, curren, callback) {
     cursor.toArray(function (err, result) {
         
         if (err) {
@@ -169,14 +147,22 @@ function jointResponse (link, dbReq, cursor, callback) {
             }
             
             // get linked data
-            jointRequest(dbReq, dbReq.joints[joint], link, result, callback);
+            jointRequest(dbReq, dbReq.joints[joint], link, result, function (err, emtpy) {
+                
+                if (err) {
+                    return callback ? callback(err) : link.send(err.statusCode || 500, err.toString());
+                }
+                
+                if (++current === dbReq.jointsLength) {
+                    sendJointResult(link, result, dbReq.options.sort, callback);
+                }
+            });
         }
     });
 }
 
 // read
 exports.read = function (link, dbReq, callback) {
-    
     // get data and count
     dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
         dbReq.template._modm.collection.count(dbReq.query, function (countErr, count) {
@@ -185,7 +171,7 @@ exports.read = function (link, dbReq, callback) {
                 link.res.headers['X-Mono-CRUD-Count'] = count.toString();
             }
             
-                // merge linked data in result data
+            // merge linked data in result data
             if (!err && dbReq.joints) {
                 return jointResponse(link, dbReq, cursor, callback);
             }
