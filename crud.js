@@ -28,6 +28,11 @@ var methods = {
     getTemplate: function () {
         var self = this;
         return self.template;
+    },
+    // TODO remove this when crud-links uses crud as library
+    flow: function (config) {
+        var self = this;
+        Flow(self, null, config);
     }
 };
 
