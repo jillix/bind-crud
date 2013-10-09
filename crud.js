@@ -30,8 +30,9 @@ var methods = {
         return self.template;
     },
     // TODO remove this when crud-links uses crud as library
-    flow: function (config) {
+    addFlow: function (config) {
         var self = this;
+        
         Flow(self, null, config);
     }
 };
