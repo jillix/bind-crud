@@ -14,22 +14,83 @@ function mergeTemplates (templates, callback) {
             
             if (templateCache[template]) {
                 
-                // merge linked schema
-                for (var field in templateCache[template].schema) {
-                    if (field[0] !== '_') {
-                        templates[i].schema[link + '.' + field] = templateCache[template].schema[field];
-                    }
-                }
-                
                 // hide link field
                 templates[i].schema[link].hidden = true;
                 templates[i].schema[link].noSearch = true;
-                
-                // merge linked schema config
+
+                // compute the field policies which defaults to:
+                // - overwrite fields (only the specified)
+                // - merge field (merge field propertis)
+                var mergeFields = templates[i].schema[link].mergeFields = templates[i].schema[link].mergeFields || false;
+                var overwriteField = templates[i].schema[link].overwriteField = templates[i].schema[link].overwriteField || false;
+
+                // TODO Since fields containing dots cannot be stored in mongo, we save them with comma instead.
+                //      Here we change back from comma to dot.
                 if (templates[i].schema[link].fields) {
                     for (var linkedField in templates[i].schema[link].fields) {
-                        for (var option in templates[i].schema[link].fields[linkedField]) {
-                            templates[i].schema[link + '.' + linkedField][option] = templates[i].schema[link].fields[linkedField][option];
+                        if (linkedField.indexOf(',') > -1) {
+                            templates[i].schema[link].fields[linkedField.replace(/,/g, '.')] = templates[i].schema[link].fields[linkedField];
+                            delete templates[i].schema[link].fields[linkedField];
+                        }
+                    }
+                }
+
+                // MERGE fields
+                if (mergeFields) {
+
+                    // copy linked schema
+                    for (var field in templateCache[template].schema) {
+                        if (field[0] !== '_') {
+                            templates[i].schema[link + '.' + field] = JSON.parse(JSON.stringify(templateCache[template].schema[field]));
+                        }
+                    }
+
+                    if (templates[i].schema[link].fields) {
+
+                        for (var linkedField in templates[i].schema[link].fields) {
+                            // OVERWRITE field
+                            if (overwriteField) {
+                                templates[i].schema[link + '.' + linkedField] = templates[i].schema[link].fields[linkedField];
+                            }
+                            // MERGE field
+                            else {
+                                for (var option in templates[i].schema[link].fields[linkedField]) {
+                                    templates[i].schema[link + '.' + linkedField][option] = templates[i].schema[link].fields[linkedField][option];
+                                }
+                            }
+                        }
+                    }
+                }
+                // OVERWRITE fields
+                else {
+                    if (templates[i].schema[link].fields) {
+                        // OVERWRITE field
+                        if (overwriteField) {
+                            for (var linkedField in templates[i].schema[link].fields) {
+                                // do not accept fields that do not exist in the original linked schema
+                                if (!templateCache[template].schema[linkedField]) {
+                                    continue;
+                                }
+                                // just copy the oricinal field schema
+                                templates[i].schema[link + '.' + linkedField] = templateCache[template].schema[field];
+                            }
+                        }
+                        // MERGE field
+                        else {
+                            for (var linkedField in templates[i].schema[link].fields) {
+                                // do not accept fields that do not exist in the original linked schema
+                                if (!templateCache[template].schema[linkedField]) {
+                                    continue;
+                                }
+
+                                // get the original schema only for the wanted fields
+                                templates[i].schema[link + '.' + linkedField] = templateCache[template].schema[linkedField];
+
+                                // merge/extend the field with the link schema options
+                                for (var option in templates[i].schema[link].fields[linkedField]) {
+                                    templates[i].schema[link + '.' + linkedField][option] = templates[i].schema[link].fields[linkedField][option];
+                                }
+                            }
                         }
                     }
                 }
