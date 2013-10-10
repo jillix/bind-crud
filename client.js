@@ -116,7 +116,7 @@ function fetchTemplates (data, callback, ignoreLinks) {
             if (templateCache[data.q._id.$in[i]]) {
                 cached[i] = templateCache[data.q._id.$in[i]];
             } else {
-                cached[i] = data.q._id.$in[i];geil
+                cached[i] = data.q._id.$in[i];
                 query.push(data.q._id.$in[i]);
             }
         }
