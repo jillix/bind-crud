@@ -249,12 +249,12 @@ function handler (method, data, callback) {
     
     // check query data
     if (!data) {
-        return self.emit('crudError', err || new Error(self.miid + '|crud: No data for query.'));
+        return self.emit('crudError', new Error(self.miid + '|crud: No data for query.'));
     }
     
     // check if a template id is available
     if (!data.t && (!self.template || !self.template._id)) {
-        return callback(err || new Error(self.miid + '|crud: No template id for query.'));
+        return callback(new Error(self.miid + '|crud: No template id for query.'));
     }
     
     // get template id for request
