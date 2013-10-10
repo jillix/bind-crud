@@ -93,10 +93,13 @@ function templateHandler (templates, callback, ignoreLinks) {
     }
 }
 
-// TODO handle caching
 // TODO callback buffering
 function fetchTemplates (data, callback, ignoreLinks) {
     var self = this;
+    
+    if (!data) {
+        return callback(new Error(self.miid + '|crud: Crud object is needed to fetch tempaltes'));
+    }
     
     if (data instanceof Array) {
         data = {
@@ -105,10 +108,43 @@ function fetchTemplates (data, callback, ignoreLinks) {
         };
     }
     
+    // handle cached templates
+    if (data.q && data.q._id && data.q._id.$in) {
+        var cached = [];
+        var query = [];
+        for (var i = 0, l = data.q._id.$in.length; i < l; ++i) {
+            if (templateCache[data.q._id.$in[i]]) {
+                cached[i] = templateCache[data.q._id.$in[i]];
+            } else {
+                cached[i] = data.q._id.$in[i];geil
+                query.push(data.q._id.$in[i]);
+            }
+        }
+        
+        if (query.length === 0) {
+            return templateHandler.call(self, cached, callback, ignoreLinks);
+        } else {
+            data.q._id.$in = query;
+        }
+    }
+    
     self.link('read', {data: data}, function (err, templates) {
         
         if (err || data.noMerge) {
             return callback(err, templates);
+        }
+        
+        // add fetched templates to cached
+        if (data.q && data.q._id && data.q._id.$in) {
+            for (var i = 0, l = templates.length; i < l; ++i) {
+                for (var ii = 0, ll = cached.length; ii < ll; ++ii) {
+                    if (typeof cached[ii] === 'string' && cached[ii] === templates[i]._id) {
+                        cached[ii] = templates[i];
+                    }
+                }
+            }
+            
+            templates = cached;
         }
         
         templateHandler.call(self, templates, callback, ignoreLinks);
