@@ -88,7 +88,7 @@ function jointRequest (dbReq, jointDbReq, link, result, callback) {
         cursor.toArray(function (err, jointResult) {
         
             if (err || jointResult.length === 0) {
-                callback(err, empty);
+                return callback(err);
             }
             
             // create joint object
