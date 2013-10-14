@@ -11,6 +11,7 @@ var config = {
         _id: {type: 'objectid'},
         _tp: {type: 'objectid', required: true},
         _li: [{type: 'objectid'}],
+        _ls: [{type: 'objectid'}],
         db: {type: 'string', required: true},
         collection: {type: 'string', required: true},
         roles: {type: 'object', required: true},
