@@ -97,3 +97,13 @@ myTemplate = {
     }
 }
 ```
+
+### Change Log
+
+#### `dev`
+
+- fixed wrong `M.on` server configuration for the `crud_read` event that was using `create` as the model operation to call
+
+#### `v0.1.0`
+
+- initial release
