@@ -1,5 +1,3 @@
-M.wrap('github/jillix/crud/dev/client.js', function (require, module, exports) {
-
 var templateId = '000000000000000000000000';
 var templateCache = {};
 
@@ -269,4 +267,3 @@ exports.fetchTemplates = fetchTemplates;
 exports.setTemplate = setTemplate;
 exports.templateId = templateId;
 
-return module; });
