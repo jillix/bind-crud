@@ -214,7 +214,7 @@ function fetchTemplates (request, callback) {
     // check acces on template item
     dbReq.query._tp = config.templateId;
     dbReq.query['roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
-    
+
     // fetch requested templates from db
     io.read(null, dbReq, function (err, cursor) {
         
@@ -262,9 +262,9 @@ function getTemplate (request, callback) {
         role: request.role,
         method: request.method
     };
-    
+
     fetchTemplates(templateRequest, function (err, template) {
-        
+
         if (err) {
             err.statusCode = err.statusCode || 500;
             return callback(err);
@@ -301,9 +301,9 @@ function getMergeTemplates (request, role, callback) {
     });
 }
 
-// called from the getTempaltes operation
+// TODO what does this do?
 function getTemplates (request, callback) {
-    
+
     fetchTemplates(request, function (err, templates) {
 
         if (err) {
@@ -339,4 +339,4 @@ exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
 exports.getMergeTemplates = getMergeTemplates;
 exports.getAccessKey = getAccessKey;
-exports.templateId = config.templateId;
+exports.CORE_TEMPLATE_ID = config.templateId;

@@ -228,7 +228,7 @@ module.exports = function (method, link) {
     if (!request) {
         return link.send(400, 'Bad request.');
     }
-    
+
     // get template and check access (cache)
     templates.getTemplate(request, function (err, request) {
 
@@ -241,11 +241,12 @@ module.exports = function (method, link) {
         } catch (err) {
             return link.send(400, 'Incorrect ObjectId format');
         }
-        
+
         // sepecial handler for template requests
-        if (method === 'read' && request.templateId === templates.templateId.toString()) {
+        if (method === 'read' && request.templateId == templates.CORE_TEMPLATE_ID) {
+
             return templates.getTemplates(request, function (err, result) {
-                    
+
                     if (err) {
                         return link.send(err.statusCode || 500, err.message);
                     }
