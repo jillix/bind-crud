@@ -161,7 +161,14 @@ function jointResponse (link, dbReq, cursor, curren, callback) {
     });
 }
 
-// read
+// CRUD interface
+
+exports.create = function (link, dbReq, callback) {
+    dbReq.template._modm.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
+        response(link, err, newItem, callback);
+    });
+};
+
 exports.read = function (link, dbReq, callback) {
     // get data and count
     dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
@@ -181,24 +188,15 @@ exports.read = function (link, dbReq, callback) {
     });
 };
 
-// write
 exports.update = function (link, dbReq, callback) {
-    
     dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
         response(link, err, updItem, callback);
     });
 };
 
-exports.create = function (link, dbReq, callback) {
-    
-    dbReq.template._modm.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
-        response(link, err, newItem, callback);
-    });
-};
-
-exports.delete = function (link, dbReq, callback) {
-
+exports['delete'] = function (link, dbReq, callback) {
     dbReq.template._modm.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
         response(link, err, numOfRmDocs, callback);
     });
 };
+

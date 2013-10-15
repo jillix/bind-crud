@@ -8,9 +8,9 @@
         "github/adioo/flow/v0.1.0"
     ],
     "operations": [
+        { "file": "operations.js", "function": "create" },
         { "file": "operations.js", "function": "read" },
-        { "file": "operations.js", "function": "delete" },
         { "file": "operations.js", "function": "update" },
-        { "file": "operations.js", "function": "create" }
+        { "file": "operations.js", "function": "delete" }
     ]
 }
