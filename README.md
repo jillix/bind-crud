@@ -102,6 +102,10 @@ myTemplate = {
 
 #### `dev`
 
+- add fixes and new featured here!
+
+#### `v0.1.1`
+
 - fixed wrong `M.on` server configuration for the `crud_read` event that was using `create` as the model operation to call
 
 #### `v0.1.0`
