@@ -51,7 +51,20 @@ myTemplate = {
     name: 'template_name',
     roles: {
         // set any combination of c, r, u or d in access
-        'roleId': {access: 'crud'}
+        'roleId': {access: 'crud'},
+        // optional template configuration overwriting
+        // the only supported template properties are: options, links, and schema
+        'config': {
+            'options': {
+                'html': 'another/html/file.html'
+            },
+            'links': {
+                // ...
+            },
+            'schema': {
+                ...
+            }
+        }
     },
     // add a role with access rights to every item
     itemAccess: 'crud',
@@ -103,6 +116,10 @@ myTemplate = {
 #### `dev`
 
 - add fixes and new featured here!
+
+#### `v0.2.0`
+
+- added role template configuration overwriting
 
 #### `v0.1.1`
 

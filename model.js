@@ -243,8 +243,7 @@ module.exports = function (method, link) {
         }
 
         // sepecial handler for template requests
-        if (method === 'read' && request.templateId == templates.CORE_TEMPLATE_ID) {
-
+        if (method === 'read' && request.templateId == templates.CORE_TEMPLATE_IDS.templates) {
             return templates.getTemplates(request, function (err, result) {
 
                     if (err) {

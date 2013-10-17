@@ -1,10 +1,35 @@
 var io = require('./io');
 var modm = require('modm');
 
+
+// ******************************
+// Constants
+// ******************************
+
+var CORE_TEMPLATE_IDS = {
+    templates: '000000000000000000000000'
+};
+
+var PRIVATE_FIELDS = {
+    _tp: 1,
+    _li: 1,
+    db: 1,
+    collection: 1,
+    roles: 1,
+    itemAccess: 1,
+    linkedFields: 1
+};
+
+var ROLE_CONFIGURABLE_FIELDS = {
+    options: 1,
+    links: 1,
+    schema: 1
+};
+
+
 // TODO let the user define this configs
 var config = {
     dbName: 'dms', // TODO handle with datasources
-    templateId: modm.ObjectId('000000000000000000000000'), // TODO handle with datasources
     roleTemplateId: modm.ObjectId('000000000000000000000002'),
     templateColName: 'd_templates', // TODO handle with datasources
     templateSchema: {
@@ -22,60 +47,156 @@ var config = {
     }
 };
 
+// ******************************
+// Templates
+// ******************************
+
 var templateSchema = new modm.Schema(config.templateSchema);
 
 // template cache
-var templateCache = {
-    // template's template must be in the cache, otherwise 
-    // it's impossible to create the first template item
-    '000000000000000000000000': {
-        _id: modm.ObjectId('000000000000000000000000'),
-        _modm: {
-            db: modm(config.dbName, {
-                server: {pooSize: 3},
-                db: {w: 1}
-            })
-        },
-        db: config.dbName,
-        collection: config.templateColName,
-        roles: {
-            '*': {
-                access: 'r'
-            }
-        },
-        itemAccess: 'crud',
-        label: 'Templates',
-        schema: templateSchema.paths
-        
-    }
-    
-    // TODO move all core tempaltes to crud module.. how to add roles??
+var templateCache = {};
+
+// template's template must be in the cache, otherwise
+// it's impossible to create the first template item
+templateCache[CORE_TEMPLATE_IDS.templates] = {
+    _id: modm.ObjectId(CORE_TEMPLATE_IDS.templates),
+    _modm: {
+        db: modm(config.dbName, {
+            server: {pooSize: 3},
+            db: {w: 1}
+        })
+    },
+    db: config.dbName,
+    collection: config.templateColName,
+    roles: {
+        '*': {
+            access: 'r'
+        }
+    },
+    itemAccess: 'crud',
+    label: 'Templates',
+    schema: templateSchema.paths
 };
+
+// TODO move all core templates to crud module.. how to add roles??
+
 // init collection
-templateCache[config.templateId]._modm.collection = templateCache[config.templateId]._modm.db(config.templateColName, templateSchema);
+templateCache[CORE_TEMPLATE_IDS.templates]._modm.collection = templateCache[CORE_TEMPLATE_IDS.templates]._modm.db(config.templateColName, templateSchema);
 
-var privateFields = {
-    _tp: 1,
-    _li: 1,
-    db: 1,
-    collection: 1,
-    roles: 1,
-    itemAccess: 1,
-    linkedFields: 1
-};
 
-function getAccessKey (method) {
-    switch (method) {
-        case 'read':
-            return 'r';
-        case 'update':
-            return 'u';
-        case 'create':
-            return 'c';
-        case 'delete':
-            return 'd';
-    }
+// ******************************
+// Exports
+// ******************************
+
+M.on('crud_getTemplate', getTemplate);
+
+exports.getTemplate = getTemplate;
+exports.getTemplates = getTemplates;
+exports.getMergeTemplates = getMergeTemplates;
+exports.getAccessKey = getAccessKey;
+exports.CORE_TEMPLATE_IDS = CORE_TEMPLATE_IDS;
+
+
+// ******************************
+// Public functions
+// ******************************
+
+// called from the model.js to check template access
+function getTemplate (request, callback) {
+
+    var templateRequest = {
+        query: [request.templateId],
+        options: request.options,
+        role: request.role,
+        method: request.method
+    };
+
+    fetchTemplates(templateRequest, function (err, template) {
+
+        if (err) {
+            err.statusCode = err.statusCode || 500;
+            return callback(err);
+        }
+
+        if (template[0].roles)
+
+        request.template = template[0];
+
+        if (!request.template) {
+            err = new Error('Templates not found.');
+            err.statusCode = 404;
+            return callback(err);
+        }
+
+        callback(null, request);
+    });
 }
+
+// get templates for joins
+function getMergeTemplates (request, role, callback) {
+
+    request = {
+        query: request.length ? request : [],
+        role: role,
+        method: 'read'
+    };
+
+    fetchTemplates(request, function (err, templates) {
+
+        if (err) {
+            return callback(err);
+        }
+
+        callback(null, templates);
+    });
+}
+
+// special function when requesting template items
+function getTemplates (request, callback) {
+
+    fetchTemplates(request, function (err, templates) {
+
+        if (err) {
+            return callback(err);
+        }
+
+        var result = [];
+        for (var i = 0, l = templates.length, admin; i < l; ++i) {
+
+            result[i] = {};
+
+            // return full template if user has admin rigths
+            admin = false;
+            if (templates[i].roles[request.role] && templates[i].roles[request.role].access.match(/c|u|d/)) {
+                admin = true;
+            }
+
+            // delete private fields from result templates
+            for (var field in templates[i]) {
+                if ((admin || !PRIVATE_FIELDS[field]) && field !== '_modm') {
+                    result[i][field] = templates[i][field];
+                }
+            }
+
+            // we must overwrite the template with the role configuration
+            if (templates[i].roles[request.role] && templates[i].roles[request.role].config) {
+                mergeRoleTemplateConfig(result[i], templates[i].roles[request.role].config);
+            }
+        }
+
+        callback(null, result);
+    });
+}
+
+// the access key for a crud operation is the first letter of the method
+function getAccessKey (method) {
+    return typeof method === 'string' ? method[0] : undefined;
+}
+
+
+// ******************************
+// Private functions
+// ******************************
 
 // check access
 function checkAccess (template, role, method) {
@@ -141,38 +262,56 @@ function initAndCache (template) {
 }
 
 function getCachedTemplates (templates, role, method) {
-    
-    if (!templates || templates.length === 0) {
-        return {
-            query: [],
-            cached: []
-        };
+
+    var result = {
+        query: [],
+        cached: []
     }
-    
-    var resultTemplates = [];
-    var queryTemplates = [];
+
     var addedTemplates = {};
-    
-    if (templates && templates.length > 0) {
-        for (var i = 0, l = templates.length; i < l; ++i) {
-            // check if template is in cache
-            if (templateCache[templates[i]]) {
-                // check role access
-                if (checkAccess(templateCache[templates[i]], role, method)) {
-                    resultTemplates.push(templateCache[templates[i]]);
+
+    for (var i in templates) {
+        // check if template is in cache
+        if (templateCache[templates[i]]) {
+            // check role access
+            if (checkAccess(templateCache[templates[i]], role, method)) {
+                // if this role has a special template configuration
+                if (templateCache[templates[i]].roles[role] && templateCache[templates[i]].roles[role].config) {
+
+                    // we must build new template objects in order not to affect
+                    // the cache with the role configurations
+                    var partialClone = {};
+
+                    // built the partial template clone
+                    for (var key in templateCache[templates[i]]) {
+                        // the non configurable template properties are copied as reference
+                        if (!ROLE_CONFIGURABLE_FIELDS[key]) {
+                            partialClone[key] = templateCache[templates[i]][key];
+                        }
+                        // the configurable template properties must be cloned
+                        else {
+                            partialClone[key] = cloneJSON(templateCache[templates[i]][key]);
+                        }
+                    }
+
+                    // noe we can safely merge the role config without affcting the cache
+                    mergeRoleTemplateConfig(partialClone, templateCache[templates[i]].roles[role].config);
+                    result.cached.push(partialClone);
                 }
-            // add template to query
-            } else if (!addedTemplates[templates[i]]) {
-                addedTemplates[templates[i]] = true;
-                queryTemplates.push(modm.ObjectId(templates[i]));
+                // otherwise we are safe to pass the cached template reference
+                else {
+                    result.cached.push(templateCache[templates[i]]);
+                }
             }
         }
+        // add template to query
+        else if (!addedTemplates[templates[i]]) {
+            addedTemplates[templates[i]] = true;
+            queryTemplates.push(modm.ObjectId(templates[i]));
+        }
     }
-    
-    return {
-        query: queryTemplates,
-        cached: resultTemplates
-    };
+
+    return result;
 }
 
 function fetchTemplates (request, callback) {
@@ -180,39 +319,39 @@ function fetchTemplates (request, callback) {
     if (!request.query) {
         return callback('No templates to fetch.');
     }
-    
+
     // build query
     var dbReq = {
         query: {},
         options: {},
-        template: templateCache[config.templateId]
+        template: templateCache[CORE_TEMPLATE_IDS.templates]
     };
-    var cached = {};
-    
+    var oldCached = {};
+
     // [] => check cache then fetch
     if (request.query.constructor.name === 'Array') {
-        cached = getCachedTemplates(request.query, request.role, request.method);
-        
+        oldCached = getCachedTemplates(request.query, request.role, request.method);
+
         // return if no templates must be fetched from db
-        if (cached.query.length === 0) {
-            return callback(null, cached.cached);
+        if (oldCached.query.length === 0) {
+            return callback(null, oldCached.cached);
         }
         
-        dbReq.query._id = {$in: cached.query};
-        dbReq.options.limit = cached.query.length;
-        
+        dbReq.query._id = {$in: oldCached.query};
+        dbReq.options.limit = oldCached.query.length;
+    }
     // {} => fetch then check cache
     // TODO handle $in queries with cache
-    } else if (request.query.constructor.name === 'Object') {
-        cached.cached = [];
+    else if (request.query.constructor.name === 'Object') {
+        oldCached.cached = [];
         
         dbReq.query = request.query;
         dbReq.options = request.options;
         dbReq.options.fields = {};
     }
     
-    // check acces on template item
-    dbReq.query._tp = config.templateId;
+    // check access on template item
+    dbReq.query._tp = modm.ObjectId(CORE_TEMPLATE_IDS.templates);
     dbReq.query['roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
 
     // fetch requested templates from db
@@ -235,108 +374,73 @@ function fetchTemplates (request, callback) {
                 err.statusCode = 500;
                 return callback(err);
             }
-            
+
             if (!templates || templates.length === 0) {
                 err = new Error('Templates not found.');
                 err.statusCode = 404;
                 return callback(err);
             }
-            
-            // merge with cached templates
+
+            // cache the new templates
+            var newTemplates = [];
             for (var i = 0, l = templates.length; i < l; ++i) {
-                // init and cache templates
-                cached.cached.push(templateCache[templates[i]._id] || initAndCache(templates[i]));
+                initAndCache(templates[i])
+                newTemplates.push(templates[i]._id);
             }
+
+            var newCached = getCachedTemplates(newTemplates, request.role, request.method);
+            // merge with initially cached templates
+            oldCached.cached = oldCached.cached.concat(newCached.cached);
             
-            callback(null, cached.cached);
+            callback(null, oldCached.cached);
         });
     });
 }
 
-// called from the model.js to check template access
-function getTemplate (request, callback) {
-    
-    var templateRequest = {
-        query: [request.templateId],
-        options: request.options,
-        role: request.role,
-        method: request.method
-    };
-
-    fetchTemplates(templateRequest, function (err, template) {
-
-        if (err) {
-            err.statusCode = err.statusCode || 500;
-            return callback(err);
-        }
-        
-        request.template = template[0];
-        
-        if (!request.template) {
-            err = new Error('Templates not found.');
-            err.statusCode = 404;
-            return callback(err);
-        }
-        
-        callback(null, request);
-    });
+// merges a role template configuration into a template but only the allowed fields
+function mergeRoleTemplateConfig (template, roleConfig) {
+    // TODO this currently only handles top level fields in schema
+    //      because the others are flatten
+    for (var key in ROLE_CONFIGURABLE_FIELDS) {
+        mergeRoleTemplateConfigRecursive(template[key], roleConfig[key]);
+    }
 }
 
-// get templates for joins
-function getMergeTemplates (request, role, callback) {
-    
-    request = {
-        query: request.length ? request : [],
-        role: role,
-        method: 'read'
-    };
-    
-    fetchTemplates(request, function (err, templates) {
-
-        if (err) {
-            return callback(err);
+// TODO add support for:
+// - Arrays (currently being overwritten)
+// - key removal (currently you must explicitly specify a value)
+// - object overwriting (currently the recursion goes to the leaf values)
+function mergeRoleTemplateConfigRecursive (template, roleConfig) {
+    for (var key in roleConfig) {
+        if (typeof roleConfig[key] === 'object' && roleConfig[key].constructor.name !== 'Array') {
+            template[key] = template[key] || {};
+            mergeRoleTemplateConfigRecursive(template[key], roleConfig[key]);
+        } else {
+            template[key] = roleConfig[key];
         }
-        
-        callback(null, templates);
-    });
+    }
 }
 
-// TODO what does this do?
-function getTemplates (request, callback) {
-
-    fetchTemplates(request, function (err, templates) {
-
-        if (err) {
-            return callback(err);
+function cloneJSON(obj) {
+    // basic type deep copy
+    if (obj === null || obj === undefined || typeof obj !== 'object')  {
+        return obj
+    }
+    // array deep copy
+    if (obj instanceof Array) {
+        var cloneA = [];
+        for (var i = 0; i < obj.length; ++i) {
+            cloneA[i] = cloneJSON(obj[i]);
         }
-        
-        var result = [];
-        for (var i = 0, l = templates.length, admin; i < l; ++i) {
-            
-            result[i] = {};
-            
-            // return full template if user has admin rigths
-            admin = false;
-            if (templates[i].roles[request.role] && templates[i].roles[request.role].access.match(/c|u|d/)) {
-                admin = true;
-            }
-            
-            // delete private fields from result templates
-            for (var field in templates[i]) {
-                if ((admin || !privateFields[field]) && field !== '_modm') {
-                    result[i][field] = templates[i][field];
-                }
-            }
-        }
-        
-        callback(null, result);
-    });
+        return cloneA;
+    }
+    // object deep copy
+    var cloneO = {};
+    for (var i in obj) {
+        if (!obj.hasOwnProperty(i)) return;
+
+        cloneO[i] = cloneJSON(obj[i]);
+    }
+    return cloneO;
 }
 
-M.on('crud_getTemplate', getTemplate);
-
-exports.getTemplate = getTemplate;
-exports.getTemplates = getTemplates;
-exports.getMergeTemplates = getMergeTemplates;
-exports.getAccessKey = getAccessKey;
-exports.CORE_TEMPLATE_ID = config.templateId;

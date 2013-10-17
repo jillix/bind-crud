@@ -163,7 +163,7 @@ function fetchTemplates (data, callback, ignoreLinks) {
     if (data instanceof Array) {
         data = {
             t: templateId,
-            q: {_id: {$in: data}}
+            q: data
         };
     }
     
