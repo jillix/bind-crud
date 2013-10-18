@@ -117,16 +117,15 @@ function getTemplate (request, callback) {
             err.statusCode = err.statusCode || 500;
             return callback(err);
         }
-
-        if (template[0].roles)
-
-        request.template = template[0];
-
-        if (!request.template) {
+       
+        if (!template[0] || !template[0].length) {
             err = new Error('Templates not found.');
             err.statusCode = 404;
             return callback(err);
         }
+
+        if (template[0].roles)
+        request.template = template[0];
 
         callback(null, request);
     });
@@ -307,7 +306,6 @@ function getCachedTemplates (templates, role, method) {
         // add template to query
         else if (!addedTemplates[templates[i]]) {
             addedTemplates[templates[i]] = true;
-            queryTemplates.push(modm.ObjectId(templates[i]));
         }
     }
 
