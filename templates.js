@@ -118,7 +118,9 @@ function getTemplate (request, callback) {
             return callback(err);
         }
        
-        if (!template[0] || !template[0].length) {
+       
+       
+        if (!template || !template.length) {
             err = new Error('Templates not found.');
             err.statusCode = 404;
             return callback(err);
