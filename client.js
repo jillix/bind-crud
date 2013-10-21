@@ -163,10 +163,14 @@ function fetchTemplates (data, callback, ignoreLinks) {
     if (data instanceof Array) {
         data = {
             t: templateId,
-            q: data
+            q: {
+                _id: {
+                    $in: data
+                }
+            }
         };
     }
-    
+
     // handle cached templates
     if (data.q && data.q._id && data.q._id.$in) {
         var cached = [];

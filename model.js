@@ -194,7 +194,7 @@ function createJoints (request, callback) {
     });
 }
 
-function doDbReqeust (link, request) {
+function doDbRequest (link, request) {
     
     // TODO This is a hack until we can merge the templates
     if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
@@ -202,7 +202,7 @@ function doDbReqeust (link, request) {
         copy.push(request.data._tp);
         request.data._tp = copy;
     }
-    
+
     // emit a server event
     if (request.template.on && request.template.on[request.method]) {
         for (var event in request.template.on[request.method]) {
@@ -292,7 +292,7 @@ module.exports = function (method, link) {
                     request.options.fields = {_tp: 0};
                 }
                 
-                doDbReqeust(link, request);
+                doDbRequest(link, request);
             });
         } else {
             
@@ -301,7 +301,7 @@ module.exports = function (method, link) {
                 request.options.fields = {_tp: 0};
             }
             
-            doDbReqeust(link, request);
+            doDbRequest(link, request);
         }
     });
 };

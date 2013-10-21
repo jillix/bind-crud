@@ -217,7 +217,7 @@ function checkAccess (template, role, method) {
 
 function initAndCache (template) {
     
-    // save modm instance on tempalte
+    // save modm instance on template
     template._modm = {
         model: modm(template.db, {
             server: {pooSize: 3},
