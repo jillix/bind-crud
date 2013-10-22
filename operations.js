@@ -8,8 +8,8 @@ var METHODS = [
 ];
 
 for (var i in METHODS) {
-    // operations
     (function(method) {
+        // operations
         exports[method] = function (link) {
             model(createRequest(method, link), createResponseHandler(method, link));
         };
@@ -36,6 +36,7 @@ for (var i in METHODS) {
 
 // private functions
 function createRequest (method, link) {
+
     var data = link.data || {};
 
     // template id is mandatory
