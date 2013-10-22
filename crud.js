@@ -46,5 +46,3 @@ function init (eventFlow) {
 
 module.exports = init;
 
-
-return module; });
