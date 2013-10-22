@@ -1,4 +1,3 @@
-M.wrap('github/jillix/crud/v0.2.0-alpha2/crud.js', function (require, module, exports) {
 var Flow = require('github/adioo/flow');
 var client = require('./client');
 
@@ -43,6 +42,4 @@ function init (eventFlow) {
 
     self.emit('ready');
 }
-
-module.exports = init;
 
