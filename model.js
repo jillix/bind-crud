@@ -2,47 +2,6 @@ var io = require('./io');
 var templates = require('./templates');
 var ObjectId = require('modm').ObjectId;
 
-function createRequest (method, link) {
-
-    var data = link.data || {};
-
-    // template id is mandatory
-    if (!data.t) {
-        return;
-    }
-
-    var request = {
-        role: link.session.crudRole,
-        options: {},
-        templateId: data.t,
-        method: method,
-        // TODO remove this when updates on linked fields are possible
-        noJoins: data.noJoins
-    };
-    
-    // query
-    request.query = data.q || {};
-    request.query._tp = data.t;
-    
-    // update
-    if (data.d && data.d.constructor.name === 'Object') {
-
-        // set type
-        if (method === 'create') {
-            data.d._tp = data.t;
-        }
-
-        request.data = data.d;
-    }
-
-    // options
-    if (data.o && data.o.constructor.name === 'Object') {
-        request.options = data.o;
-    }
-    
-    return request;
-}
-
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
     
     // if array of objects
@@ -194,7 +153,7 @@ function createJoints (request, callback) {
     });
 }
 
-function doDbRequest (link, request) {
+function doDbRequest (request, callback) {
     
     // TODO This is a hack until we can merge the templates
     if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
@@ -213,72 +172,67 @@ function doDbRequest (link, request) {
     }
 
     // do input/output
-    io[request.method](link, request);
+    io[request.method](request, callback);
 }
 
-module.exports = function (method, link) {
-    
-    if (!io[method]) {
-        return link.send(501, 'Method not implemented');
-    }
-    
-    // check parameters
-    var request = createRequest(method, link);
-    
+function createError(code, message) {
+    var error = new Error(message);
+    error.statusCode = code;
+}
+
+module.exports = function (request, callback) {
+
     if (!request) {
-        return link.send(400, 'Bad request.');
+        return callback(createError(400, 'Bad request'));
+    }
+    if (!io[request.method]) {
+        return callback(createError(501, 'Method not implemented'));
     }
 
     // get template and check access (cache)
     templates.getTemplate(request, function (err, request) {
 
         if (err) {
-            return link.send(err.statusCode || 500, err.message);
+            return callback(err);
         }
-        
+
         try {
             recursiveConvert(request.template.schema, request.query, '');
         } catch (err) {
-            return link.send(400, 'Incorrect ObjectId format');
+            // TODO not realy correct
+            return callback(createError(400, 'Incorrect ObjectId format'));
         }
 
-        // sepecial handler for template requests
-        if (method === 'read' && request.templateId == templates.CORE_TEMPLATE_IDS.templates) {
-            return templates.getTemplates(request, function (err, result) {
-
-                    if (err) {
-                        return link.send(err.statusCode || 500, err.message);
-                    }
-                    
-                    link.send(200, result);
-                }
-            );
+        // special handler for template requests
+        if (request.method === 'read' && request.templateId == templates.CORE_TEMPLATE_IDS.templates) {
+            templates.getTemplates(request, callback);
+            return;
         }
-        
+
         // check role access when reading templates with item access control
         if (request.template.itemAccess) {
-            request.query['roles.' + request.role + '.access'] = {$regex: templates.getAccessKey(method)};
-            
+            request.query['roles.' + request.role + '.access'] = { $regex: templates.getAccessKey(request.method) };
+
             // add role access to item
-            if (method === 'create') {
+            if (request.method === 'create') {
                 request.data.roles = {};
-                request.data.roles[request.role] = {access: request.template.itemAccess};
+                request.data.roles[request.role] = { access: request.template.itemAccess };
             }
-            
-            // prevent update method form overwrite his own rights
-            if (method === 'update') {
+
+            // prevent update method form overwrite its own rights
+            if (request.method === 'update') {
                 if (request.data.$set && typeof request.data.$set['roles.' + request.role + '.access'] !== 'undefined') {
                     request.data.$set['roles.' + request.role + '.access'] = request.template.itemAccess;
                 }
             }
         }
-        
+
         // make joins only on find requests and when template has linked fields
-        if (method === 'read' && request.template.linkedFields && !request.noJoins) {
+        if (request.method === 'read' && request.template.linkedFields && !request.noJoins) {
             createJoints(request, function (err, joints, length) {
-                
+
                 if (err) {
-                    return link.send(err.statusCode || 500, err.message);
+                    return callback(err);
                 }
                 
                 // add joints to request
@@ -286,22 +240,22 @@ module.exports = function (method, link) {
                     request.joints = joints;
                     request.jointsLength = length;
                 }
-                
+
                 // hide _tp
                 if (!request.options.fields || Object.keys(request.options.fields).length === 0) {
                     request.options.fields = {_tp: 0};
                 }
-                
-                doDbRequest(link, request);
+
+                doDbRequest(request, callback);
             });
         } else {
-            
             // hide _tp
             if (!request.options.fields || Object.keys(request.options.fields).length === 0) {
                 request.options.fields = {_tp: 0};
             }
-            
-            doDbRequest(link, request);
+
+            doDbRequest(request, callback);
         }
     });
 };
+

@@ -1,41 +1,4 @@
-function response (link, err, result, callback) {
-
-    if (err) {
-        return callback ? callback(err) : link.send(err.statusCode || 500, err.toString());
-    }
-    
-    if(!callback) {
-        link.res.headers['content-type'] = 'application/json; charset=utf-8';
-    }
-
-    if (result.constructor.name === 'Cursor') {
-        
-        if (callback) {
-            return callback(null, result);
-        }
-        
-        // stream result
-        var stream = result.stream();
-        link.stream.start(200);
-        
-        stream.on('end', function() {
-            link.stream.end();
-        });
-
-        stream.on('error', function(err) {
-            link.stream.error(500, err.toString());
-        });
-
-        stream.on('data', function(data) {
-            link.stream.data(data);
-        });
-        
-    } else {
-        callback ? callback(err, result) : link.send(200, result);
-    }
-}
-
-function sendJointResult (link, result, sort, callback) {
+function sendJointResult (result, sort, callback) {
     
     var items = [];
     
@@ -74,10 +37,10 @@ function sendJointResult (link, result, sort, callback) {
         });
     }
     
-    callback ? callback(err, result) : link.send(200, items);
+    callback(null, result);
 }
 
-function jointRequest (dbReq, jointDbReq, link, result, callback) {
+function jointRequest (dbReq, jointDbReq, result, callback) {
     jointDbReq.template._modm.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
         
         // ignore query when no items in result
@@ -97,7 +60,7 @@ function jointRequest (dbReq, jointDbReq, link, result, callback) {
                 jointData[jointResult[i]._id] = jointResult[i];
             }
             
-            // merge linkd data
+            // merge linked data
             for (var i = 0, l = result.length; i < l; ++i) {
                 
                 if (
@@ -118,21 +81,22 @@ function jointRequest (dbReq, jointDbReq, link, result, callback) {
     });
 }
 
-function jointResponse (link, dbReq, cursor, curren, callback) {
+function jointResponse (dbReq, cursor, callback) {
+
     cursor.toArray(function (err, result) {
-        
+
         if (err) {
-            return callback ? callback(err) : link.send(err.statusCode || 500, err.toString());
+            return callback(err);
         }
-        
-        // don't merge if no doucments are found
+
+        // don't merge if no documents are found
         if (result.length === 0) {
-            return callback ? callback(err, result) : link.send(200, result);
+            return callback(null, []);
         }
-        
+
         var current = 0;
         for (var joint in dbReq.joints) {
-            
+
             // set limit to length of result
             dbReq.joints[joint].options.limit = result.length;
             
@@ -147,14 +111,14 @@ function jointResponse (link, dbReq, cursor, curren, callback) {
             }
             
             // get linked data
-            jointRequest(dbReq, dbReq.joints[joint], link, result, function (err, emtpy) {
+            jointRequest(dbReq, dbReq.joints[joint], result, function (err, emtpy) {
                 
                 if (err) {
-                    return callback ? callback(err) : link.send(err.statusCode || 500, err.toString());
+                    return callback(err);
                 }
                 
                 if (++current === dbReq.jointsLength) {
-                    sendJointResult(link, result, dbReq.options.sort, callback);
+                    sendJointResult(result, dbReq.options.sort, callback);
                 }
             });
         }
@@ -163,40 +127,39 @@ function jointResponse (link, dbReq, cursor, curren, callback) {
 
 // CRUD interface
 
-exports.create = function (link, dbReq, callback) {
-    dbReq.template._modm.collection.insert(dbReq.data, dbReq.options, function (err, newItem) {
-        response(link, err, newItem, callback);
-    });
+exports.create = function (dbReq, callback) {
+    dbReq.template._modm.collection.insert(dbReq.data, dbReq.options, callback);
 };
 
-exports.read = function (link, dbReq, callback) {
+exports.read = function (dbReq, callback) {
     // get data and count
     dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
+
+        if (err) {
+            return callback(err);
+        }
+
         dbReq.template._modm.collection.count(dbReq.query, function (countErr, count) {
-            
-            if (link && !countErr) {
-                link.res.headers['X-Mono-CRUD-Count'] = count.toString();
+
+            if (countErr) {
+                count = -1;
             }
-            
+
             // merge linked data in result data
-            if (!err && dbReq.joints) {
-                return jointResponse(link, dbReq, cursor, callback);
+            if (dbReq.joints) {
+                return jointResponse(dbReq, cursor, callback);
             }
-            
-            response(link, err, cursor, callback);
+
+            callback(null, cursor, count);
         });
     });
 };
 
-exports.update = function (link, dbReq, callback) {
-    dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, function (err, updItem) {
-        response(link, err, updItem, callback);
-    });
+exports.update = function (dbReq, callback) {
+    dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, callback);
 };
 
-exports['delete'] = function (link, dbReq, callback) {
-    dbReq.template._modm.collection.remove(dbReq.query, dbReq.options, function (err, numOfRmDocs) {
-        response(link, err, numOfRmDocs, callback);
-    });
+exports['delete'] = function (dbReq, callback) {
+    dbReq.template._modm.collection.remove(dbReq.query, dbReq.options, callback);
 };
 

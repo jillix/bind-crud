@@ -88,7 +88,7 @@ templateCache[CORE_TEMPLATE_IDS.templates]._modm.collection = templateCache[CORE
 // Exports
 // ******************************
 
-M.on('crud_getTemplate', getTemplate);
+M.on('crud.getTemplate', getTemplate);
 
 exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
@@ -315,7 +315,7 @@ function getCachedTemplates (templates, role, method) {
 }
 
 function fetchTemplates (request, callback) {
-    
+
     if (!request.query) {
         return callback('No templates to fetch.');
     }
@@ -355,7 +355,7 @@ function fetchTemplates (request, callback) {
     dbReq.query['roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
 
     // fetch requested templates from db
-    io.read(null, dbReq, function (err, cursor) {
+    io.read(dbReq, function (err, cursor) {
         
         if (err) {
             err.statusCode = 500;
