@@ -15,7 +15,20 @@ for (var i in METHODS) {
         };
 
         // listeners
-        M.on('crud.' + method, function (request, callback) {
+        var serverEvent = 'crud.' + method;
+        M.on(serverEvent, function (request, callback) {
+            if (!callback) {
+                callback = function(err) {
+                    if (err) {
+                        console.error('Error executing server operation: ' + serverEvent);
+                        console.error('******************')
+                        console.error(err);
+                        console.error('------------------')
+                        console.error(request);
+                        console.error('******************')
+                    }
+                };
+            }
             model(request, callback);
         });
     })(METHODS[i]);
