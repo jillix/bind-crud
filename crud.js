@@ -35,11 +35,11 @@ var methods = {
     }
 };
 
-function init (eventFlow) {
+module.exports = function (eventFlow) {
     var self = this;
     
     Flow(self, methods, eventFlow);
 
     self.emit('ready');
-}
+};
 
