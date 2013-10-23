@@ -436,10 +436,10 @@ function cloneJSON(obj) {
     }
     // object deep copy
     var cloneO = {};
-    for (var i in obj) {
-        if (!obj.hasOwnProperty(i)) return;
+    for (var key in obj) {
+        if (!obj.hasOwnProperty(key)) continue;
 
-        cloneO[i] = cloneJSON(obj[i]);
+        cloneO[key] = cloneJSON(obj[key]);
     }
     return cloneO;
 }
