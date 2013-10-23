@@ -42,4 +42,3 @@ module.exports = function (eventFlow) {
 
     self.emit('ready');
 };
-

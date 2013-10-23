@@ -49,6 +49,7 @@ function createRequest (method, link) {
         options: {},
         templateId: data.t,
         method: method,
+        session: link.session,
         // TODO remove this when updates on linked fields are possible
         noJoins: data.noJoins
     };
