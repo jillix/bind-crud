@@ -84,9 +84,13 @@ function createResponseHandler (method, link) {
         }
 
         link.res.headers['content-type'] = 'application/json; charset=utf-8';
-        if (method === 'read' && results.constructor.name === 'Cursor') {
+        
+        // if we have an array or a cursor, set X-Mono-CRUD-Count response header
+        if (["Cursor", "Array"].indexOf(results.constructor.name) !== -1) {
+            link.res.headers['X-Mono-CRUD-Count'] = (results.length || readCount).toString();
+        }
 
-            link.res.headers['X-Mono-CRUD-Count'] = readCount.toString();
+        if (method === 'read' && results.constructor.name === 'Cursor') {
 
             // stream result
             var stream = results.stream();
