@@ -87,7 +87,7 @@ function createResponseHandler (method, link) {
         
         // if we have an array or a cursor, set X-Mono-CRUD-Count response header
         if (["Cursor", "Array"].indexOf(results.constructor.name) !== -1) {
-            link.res.headers['X-Mono-CRUD-Count'] = (results.length || readCount).toString();
+            link.res.headers['X-Mono-CRUD-Count'] = (results.length || readCount || 0).toString();
         }
 
         if (method === 'read' && results.constructor.name === 'Cursor') {
