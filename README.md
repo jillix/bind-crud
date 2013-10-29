@@ -117,6 +117,10 @@ myTemplate = {
 
 - add fixes and new featured here!
 
+#### `v0.2.1`
+
+- add fixed `cloneJSON` bug when handling `ObjectID`'s
+
 #### `v0.2.0`
 
 - added role template configuration overwriting
