@@ -426,6 +426,12 @@ function cloneJSON(obj) {
     if (obj === null || obj === undefined || typeof obj !== 'object')  {
         return obj
     }
+
+    // just return ObjectId's as they are
+    if (obj.constructor.name === 'ObjectID') {
+        return obj;
+    }
+
     // array deep copy
     if (obj instanceof Array) {
         var cloneA = [];
