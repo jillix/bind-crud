@@ -17,6 +17,9 @@ for (var i in METHODS) {
         // listeners
         var serverEvent = 'crud.' + method;
         M.on(serverEvent, function (request, callback) {
+
+            request.method = method;
+
             if (!callback) {
                 callback = function(err) {
                     if (err) {

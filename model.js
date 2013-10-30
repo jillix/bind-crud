@@ -178,6 +178,7 @@ function doDbRequest (request, callback) {
 function createError(code, message) {
     var error = new Error(message);
     error.statusCode = code;
+    return error;
 }
 
 module.exports = function (request, callback) {
@@ -185,6 +186,7 @@ module.exports = function (request, callback) {
     if (!request) {
         return callback(createError(400, 'Bad request'));
     }
+
     if (!io[request.method]) {
         return callback(createError(501, 'Method not implemented'));
     }
