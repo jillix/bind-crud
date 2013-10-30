@@ -162,17 +162,22 @@ function doDbRequest (request, callback) {
         request.data._tp = copy;
     }
 
-    // emit a server event
-    if (request.template.on && request.template.on[request.method]) {
-        for (var event in request.template.on[request.method]) {
-            var args = request.template.on[request.method][event].slice();
-            args.splice(0, 0, event, request);
-            M.emit.apply(M, args);
-        }
-    }
 
     // do input/output
-    io[request.method](request, callback);
+    io[request.method](request, function (err, data, readCount) {
+    
+        callback (err, data, readCount);
+
+        // emit a server event
+        if (request.template.on && request.template.on[request.method]) {
+            for (var event in request.template.on[request.method]) {
+                var args = request.template.on[request.method][event].slice();
+                args.splice(0, 0, event, request);
+                request.result = data;
+                M.emit.apply(M, args);
+            }
+        }
+    });
 }
 
 function createError(code, message) {
