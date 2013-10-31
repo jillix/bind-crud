@@ -117,6 +117,18 @@ myTemplate = {
 
 - add fixes and new featured here!
 
+#### `v0.2.4`
+
+- added date conversion
+
+#### `v0.2.3`
+
+- set data as request.result
+
+#### `v0.2.2`
+
+- overwrite request.method. Return error in createError function
+
 #### `v0.2.1`
 
 - add fixed `cloneJSON` bug when handling `ObjectID`'s

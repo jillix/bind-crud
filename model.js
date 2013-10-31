@@ -23,7 +23,7 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
                         obj[i] = new Date(obj[i]);
                         break;
                 }
-           }   
+            }   
         }
         return;
     }
