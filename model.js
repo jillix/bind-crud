@@ -14,9 +14,16 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 
             if (typeof obj[i] === 'object') {
                 recursiveConvert(paths, obj[i], keyPath, convertAllStrings);
-            } else if (paths[keyPath] && paths[keyPath].type === 'objectid'){
-                obj[i] = ObjectId(obj[i]);
-            }
+            } else if (paths[keyPath]) {
+                switch (paths[keyPath].type) {
+                    case 'objectid':
+                        obj[i] = ObjectId(obj[i]);
+                        break;
+                    case 'date':
+                        obj[i] = new Date(obj[i]);
+                        break;
+                }
+            }   
         }
         return;
     }
@@ -37,6 +44,8 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
                 recursiveConvert(paths, obj[key], newKeyPath, parentSaysId);
             } else if (parentSaysId) {
                 obj[key] = ObjectId(obj[key]);
+            } else if (typeof obj[key] === 'string' && paths[newKeyPath] && paths[newKeyPath].type === 'date') {
+                obj[key] = new Date(obj[key]);
             }
         }
     }
