@@ -162,7 +162,6 @@ function doDbRequest (request, callback) {
         request.data._tp = copy;
     }
 
-
     // do input/output
     io[request.method](request, function (err, data, readCount) {
     
@@ -204,7 +203,9 @@ module.exports = function (request, callback) {
         }
 
         try {
-            recursiveConvert(request.template.schema, request.query, '');
+            if (request.method !== 'create') {
+                recursiveConvert(request.template.schema, request.query, '');
+            }
         } catch (err) {
             // TODO not realy correct
             return callback(createError(400, 'Incorrect ObjectId format'));

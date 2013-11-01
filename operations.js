@@ -17,8 +17,9 @@ for (var i in METHODS) {
         // listeners
         var serverEvent = 'crud.' + method;
         M.on(serverEvent, function (request, callback) {
-
+            
             request.method = method;
+            request.options = request.options || {};
 
             if (!callback) {
                 callback = function(err) {
@@ -75,6 +76,8 @@ function createRequest (method, link) {
     // options
     if (data.o && data.o.constructor.name === 'Object') {
         request.options = data.o;
+    } else {
+        request.options = {};
     }
 
     return request;
