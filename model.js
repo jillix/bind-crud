@@ -4,6 +4,10 @@ var ObjectId = require('modm').ObjectId;
 
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
     
+    if (typeof obj === 'undefined') {
+        return;
+    }
+
     // if array of objects
     if (obj.constructor.name === 'Array') {
         for (var i in obj) {
@@ -216,8 +220,7 @@ module.exports = function (request, callback) {
                 recursiveConvert(request.template.schema, request.query, '');
             }
         } catch (err) {
-            // TODO not realy correct
-            return callback(createError(400, 'Incorrect ObjectId format'));
+            return callback(createError(500, err.toString()));
         }
 
         // special handler for template requests
