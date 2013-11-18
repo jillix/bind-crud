@@ -39,6 +39,7 @@ function mergeTemplates (templates, callback) {
                     // copy linked schema
                     for (var field in templateCache[template].schema) {
                         if (field[0] !== '_') {
+                            // we have to clone this because otherwise we change the original template
                             templates[i].schema[link + '.' + field] = JSON.parse(JSON.stringify(templateCache[template].schema[field]));
                         }
                     }
@@ -69,7 +70,7 @@ function mergeTemplates (templates, callback) {
                                 if (!templateCache[template].schema[linkedField]) {
                                     continue;
                                 }
-                                // just copy the oricinal field schema
+                                // just copy the original field schema
                                 templates[i].schema[link + '.' + linkedField] = templateCache[template].schema[field];
                             }
                         }
@@ -82,7 +83,8 @@ function mergeTemplates (templates, callback) {
                                 }
 
                                 // get the original schema only for the wanted fields
-                                templates[i].schema[link + '.' + linkedField] = templateCache[template].schema[linkedField];
+                                // we have to clone this because otherwise we change the original template
+                                templates[i].schema[link + '.' + linkedField] = JSON.parse(JSON.stringify(templateCache[template].schema[linkedField]))
 
                                 // merge/extend the field with the link schema options
                                 for (var option in templates[i].schema[link].fields[linkedField]) {
@@ -270,3 +272,4 @@ exports.handler = handler;
 exports.fetchTemplates = fetchTemplates;
 exports.setTemplate = setTemplate;
 exports.templateId = templateId;
+

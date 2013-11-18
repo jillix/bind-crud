@@ -117,6 +117,14 @@ myTemplate = {
 
 - add fixes and new featured here!
 
+#### `v0.2.6`
+
+- fixed client bug when merging templates: links were polluting the template cache
+
+#### `v0.2.5`
+
+- fixed bug in recursive query conversion
+
 #### `v0.2.4`
 
 - added date conversion
