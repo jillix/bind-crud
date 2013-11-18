@@ -147,7 +147,9 @@ exports.read = function (dbReq, callback) {
 
             // merge linked data in result data
             if (dbReq.joints) {
-                return jointResponse(dbReq, cursor, callback);
+                return jointResponse(dbReq, cursor, function (err, result) {
+                    callback(err, result, count);
+                });
             }
 
             callback(null, cursor, count);
