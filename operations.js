@@ -90,13 +90,20 @@ function createResponseHandler (method, link) {
         }
 
         link.res.headers['content-type'] = 'application/json; charset=utf-8';
-        
-        // if we have an array or a cursor, set X-Mono-CRUD-Count response header
-        if (["Cursor", "Array"].indexOf(results.constructor.name) !== -1) {
-            link.res.headers['X-Mono-CRUD-Count'] = (readCount || 0).toString();
+
+
+        // TODO How can this be fixed using a better way?
+        var constructorNameOfResults = results.constructor.name;
+        if (results && constructorNameOfResults === "Object" && typeof results.toArray === "function") {
+            constructorNameOfResults = "Cursor"
         }
 
-        if (method === 'read' && results.constructor.name === 'Cursor') {
+         // if we have an array or a cursor, set X-Mono-CRUD-Count response header
+        if (["Cursor", "Array"].indexOf(constructorNameOfResults) !== -1) {
+            link.res.headers['X-Mono-CRUD-Count'] = (readCount || 0).toString();
+        }
+ 
+        if (method === 'read' && constructorNameOfResults === 'Cursor') {
 
             // stream result
             var stream = results.stream();
@@ -117,4 +124,3 @@ function createResponseHandler (method, link) {
         }
     };
 }
-
