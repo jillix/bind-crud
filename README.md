@@ -116,6 +116,7 @@ myTemplate = {
 #### `dev`
 
 - add fixes and new featured here!
+- fixed the cursor constructor name: `Cursor` instead of `Object`
 
 #### `v0.2.6`
 
