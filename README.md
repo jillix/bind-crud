@@ -5,7 +5,7 @@ CRUD for mono
 
 ####Example config with flow:
 
-```
+```js
 config: {
     myMiid: {
         myEvent: ['read', 'update', 'create', 'delete']
@@ -101,7 +101,7 @@ myTemplate = {
             myCustomEventD: [arg1, argN]
         }
     },
-    
+
     links: [
         // see crud links module
     ],
@@ -116,7 +116,12 @@ myTemplate = {
 #### `dev`
 
 - add fixes and new featured here!
+
+#### `v0.2.8`
 - fixed the cursor constructor name: `Cursor` instead of `Object`
+
+#### `v0.2.7`
+- TODO
 
 #### `v0.2.6`
 
