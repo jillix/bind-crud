@@ -308,6 +308,7 @@ function getCachedTemplates (templates, role, method) {
         // add template to query
         else if (!addedTemplates[templates[i]]) {
             addedTemplates[templates[i]] = true;
+            result.query.push(templates[i]);
         }
     }
 
@@ -336,8 +337,13 @@ function fetchTemplates (request, callback) {
         if (oldCached.query.length === 0) {
             return callback(null, oldCached.cached);
         }
-        
-        dbReq.query._id = {$in: oldCached.query};
+
+        // convert the string IDs into ObjectId's
+        for (var i = 0; i < oldCached.query.length; ++i) {
+            oldCached.query[i] = modm.ObjectId(oldCached.query[i]);
+        }
+
+        dbReq.query._id = { $in: oldCached.query };
         dbReq.options.limit = oldCached.query.length;
     }
     // {} => fetch then check cache
