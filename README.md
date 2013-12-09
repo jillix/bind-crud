@@ -117,6 +117,10 @@ myTemplate = {
 
 - add fixes and new featured here!
 
+#### `v0.2.9`
+- fixed fetch template requests that were not converting `$in` `string` arrays into `ObjectId` arrays
+- fixed template cache retrieval problem
+
 #### `v0.2.8`
 - fixed the cursor constructor name: `Cursor` instead of `Object`
 
