@@ -114,8 +114,11 @@ myTemplate = {
 ### Change Log
 
 #### `dev`
-
 - add fixes and new featured here!
+
+#### `v0.2.10`
+- fixed MongoDB connection leak due to template cache bug
+- fixed typo in mongo server options when initializing modm for each template
 
 #### `v0.2.9`
 - fixed fetch template requests that were not converting `$in` `string` arrays into `ObjectId` arrays
