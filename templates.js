@@ -62,7 +62,7 @@ templateCache[CORE_TEMPLATE_IDS.templates] = {
     _id: modm.ObjectId(CORE_TEMPLATE_IDS.templates),
     _modm: {
         db: modm(config.dbName, {
-            server: {pooSize: 3},
+            server: {poolSize: 3},
             db: {w: 1}
         })
     },
@@ -216,11 +216,15 @@ function checkAccess (template, role, method) {
 }
 
 function initAndCache (template) {
-    
+
+    if (templateCache[template._id.toString()]) {
+        return templateCache[template._id];
+    }
+
     // save modm instance on template
     template._modm = {
         model: modm(template.db, {
-            server: {pooSize: 3},
+            server: {poolSize: 3},
             db: {w: 1}
         })
     };
