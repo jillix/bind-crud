@@ -15,6 +15,7 @@ var ObjectId = require('modm').ObjectId;
 function findValue (parent, dotNot) {
 
     if (!dotNot) return undefined;
+    if (!parent) return undefined;
 
     var splits = dotNot.split(".");
     var value;
@@ -214,7 +215,7 @@ function doDbRequest (request, callback) {
             //
             //   sortField becomes: 'number'
             //
-            var sortField = request.options.sort
+            var sortField = JSON.parse(JSON.stringify(request.options.sort))
               , order;
 
             sortField = sortField[sortField.length - 1];
@@ -222,7 +223,6 @@ function doDbRequest (request, callback) {
 
                 order = sortField[1];
                 sortField = sortField[0];
-
 
                 // prepare sort field
                 if (sortField instanceof Array) {
@@ -244,15 +244,22 @@ function doDbRequest (request, callback) {
                             return fieldB.localeCompare(fieldA);
                         }
                     // number
-                    } else if (typeof a === "number") {
+                    } else if (typeof fieldA === "number") {
                         if (order > 0) {
                             return fieldA - fieldB;
                         } else {
                             return fieldB - fieldA;
                         }
                     // TODO Other data types?
+                    } else if (!fieldA) {
+                        if (order > 0) {
+                            return false;
+                        } else {
+                            return true;
+                        }
                     } else {
                         console.warn("[Warning!] Unhandled sort data type: ", typeof fieldA);
+                        return true;
                     }
                 });
             }
