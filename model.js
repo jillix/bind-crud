@@ -2,8 +2,34 @@ var io = require('./io');
 var templates = require('./templates');
 var ObjectId = require('modm').ObjectId;
 
+/*
+ *  e.g. findValue({
+ *      a: {
+ *          b: {
+ *              c: 10
+ *          }
+ *      }
+ *  }, "a.b.c") === 10 // true
+ *
+ * */
+function findValue (parent, dotNot) {
+
+    if (!dotNot) return undefined;
+
+    var splits = dotNot.split(".");
+    var value;
+
+    for (var i = 0; i < splits.length; i++) {
+        value = parent[splits[i]];
+        if (value === undefined) return undefined;
+        if (typeof value === "object") parent = value;
+    }
+
+    return value;
+}
+
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
-    
+
     if (typeof obj === 'undefined') {
         return;
     }
@@ -27,7 +53,7 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
                         obj[i] = new Date(obj[i]);
                         break;
                 }
-            }   
+            }
         }
         return;
     }
@@ -57,25 +83,25 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 
 // create request objects for merge data
 function createJoints (request, callback) {
-    
+
     // check if schema paths are available
     if (!request || !request.template || !request.template.schema || !request.template.schema) {
         return callback('No schema paths available.');
     }
-    
+
     var schema = request.template.linkedFields;
     var linkedTemplatesToLoad = {};
     var returnFields;
-    
+
     // return fields
     if (request.options.fields) {
         returnFields = request.options.fields;
         request.options.fields = {};
     }
-    
+
     // handle fields who contain a link
     for (var field in schema) {
-        
+
         // get templates that must be loaded and save the cropped
         // schema paths to validate field in linked schema
         if (!linkedTemplatesToLoad[schema[field].link]) {
@@ -84,20 +110,20 @@ function createJoints (request, callback) {
                 merge: field
             };
         }
-        
+
         // check if a return field points to a linked document
         if (returnFields) {
             for (var returnField in returnFields) {
                 if (returnField.indexOf(field) === 0) {
                     if (returnFields[returnField]) {
-                        
+
                         if (!linkedTemplatesToLoad[schema[field].link].fields) {
                             linkedTemplatesToLoad[schema[field].link].fields = {};
                         }
-                        
+
                         // collect field on linked template
                         linkedTemplatesToLoad[schema[field].link].fields[returnField.substr(field.length + 1)] = 1;
-                        
+
                         // linked field is needed to merge the data
                         request.options.fields[field] = 1;
                     }
@@ -107,39 +133,39 @@ function createJoints (request, callback) {
                 }
             }
         }
-        
+
         if (!linkedTemplatesToLoad[schema[field].link].fields) {
             linkedTemplatesToLoad[schema[field].link].fields = {_tp: 0};
         }
-        
+
         // get query for linked template
         for (var queryField in request.query) {
             if (queryField !== field && queryField.indexOf(field) === 0) {
                 linkedTemplatesToLoad[schema[field].link].query[queryField.substr(field.length + 1)] = request.query[queryField];
-                
+
                 // remove link queries from request query
                 delete request.query[queryField];
             }
         }
     }
-    
+
     // convert linked tempaltes object to an array
     var linkedTemplatesToLoad_array = [];
     for (var template in linkedTemplatesToLoad) {
         linkedTemplatesToLoad_array.push(template);
     }
-    
+
     // get linked templates
     templates.getMergeTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
-        
+
         if (err) {
             return callback(err);
         }
-        
+
         // create request for linked template
         var mergeRequests = {};
         for (var i = 0, l = fetchedTemplates.length; i < l; ++i) {
-            
+
             // create merge request
             mergeRequests[fetchedTemplates[i]._id] = {
                 role: request.role,
@@ -150,24 +176,24 @@ function createJoints (request, callback) {
                 query: linkedTemplatesToLoad[fetchedTemplates[i]._id].query,
                 merge: linkedTemplatesToLoad[fetchedTemplates[i]._id].merge
             };
-            
+
             // make sure _id is always returned
             if (returnFields) {
                 request.options.fields._id = 1;
             }
-            
+
             // take limit from request
             if (request.options.limit) {
                 mergeRequests[fetchedTemplates[i]._id].options.limit = request.options.limit;
             }
         }
-        
+
         callback(null, mergeRequests, fetchedTemplates.length);
     });
 }
 
 function doDbRequest (request, callback) {
-    
+
     // TODO This is a hack until we can merge the templates
     if (request.template && request.template.addToTemplates && request.data && request.data._tp) {
         var copy = request.template.addToTemplates.slice();
@@ -177,9 +203,62 @@ function doDbRequest (request, callback) {
 
     // do input/output
     io[request.method](request, function (err, data, readCount) {
-    
-        callback (err, data, readCount);
 
+        // it's an array
+        if (data instanceof Array && request.options.sort) {
+
+            // TODO multiple sort
+            // > request.options.sort
+            //   [ [ [ 'coupon', 'name' ], 1 ],
+            //     [ 'number', 1 ] ]
+            //
+            //   sortField becomes: 'number'
+            //
+            var sortField = request.options.sort
+              , order;
+
+            sortField = sortField[sortField.length - 1];
+            if (sortField) {
+
+                order = sortField[1];
+                sortField = sortField[0];
+
+
+                // prepare sort field
+                if (sortField instanceof Array) {
+                    sortField = sortField.join("."); // e.g. ['coupon', 'name'] --> "coupon.name"
+                }
+
+                // finally sort the data
+                data.sort(function (a, b) {
+
+                    // find the sort field in items
+                    fieldA = findValue(a, sortField);
+                    fieldB = findValue(b, sortField);
+
+                    // string
+                    if (typeof fieldA === "string") {
+                        if (order > 0) {
+                            return fieldA.localeCompare(fieldB);
+                        } else {
+                            return fieldB.localeCompare(fieldA);
+                        }
+                    // number
+                    } else if (typeof a === "number") {
+                        if (order > 0) {
+                            return fieldA - fieldB;
+                        } else {
+                            return fieldB - fieldA;
+                        }
+                    // TODO Other data types?
+                    } else {
+                        console.warn("[Warning!] Unhandled sort data type: ", typeof fieldA);
+                    }
+                });
+            }
+        }
+
+        callback (err, data, readCount);
         // emit a server event
         if (request.template.on && request.template.on[request.method]) {
             for (var event in request.template.on[request.method]) {
@@ -254,7 +333,7 @@ module.exports = function (request, callback) {
                 if (err) {
                     return callback(err);
                 }
-                
+
                 // add joints to request
                 if (joints) {
                     request.joints = joints;
