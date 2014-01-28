@@ -116,6 +116,9 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here!
 
+#### `v0.2.11`
+ - Supporting linked field sorting (string and numbers)
+
 #### `v0.2.10`
 - fixed MongoDB connection leak due to template cache bug
 - fixed typo in mongo server options when initializing modm for each template
