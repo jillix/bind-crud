@@ -257,6 +257,13 @@ function doDbRequest (request, callback) {
                         } else {
                             return true;
                         }
+                    // date
+                    } else if (fieldA.constructor.name === "Date") {
+                        if (order > 0) {
+                            return fieldA > fieldB;
+                        } else {
+                            return fieldA < fieldB;
+                        }
                     } else {
                         console.warn(
                             "[Warning!] Unhandled sort data type: ", typeof fieldA,
