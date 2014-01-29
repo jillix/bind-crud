@@ -258,7 +258,11 @@ function doDbRequest (request, callback) {
                             return true;
                         }
                     } else {
-                        console.warn("[Warning!] Unhandled sort data type: ", typeof fieldA, JSON.stringify(fieldA, null, 4));
+                        console.warn(
+                            "[Warning!] Unhandled sort data type: ", typeof fieldA,
+                            "\nConstructor: ", fieldA !== undefined ? fieldA.constructor.name : "undefined",
+                            "\nValue: ", JSON.stringify(fieldA, null, 4)
+                        );
                         return true;
                     }
                 });
