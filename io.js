@@ -62,7 +62,7 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
             
             // merge linked data
             for (var i = 0, l = result.length; i < l; ++i) {
-                
+
                 if (
                     result[i] && 
                     result[i][jointDbReq.merge] &&
@@ -72,7 +72,7 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                     // merge linked data in result field
                     result[i][jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
                 } else {
-                    result[i] = null;
+                    result[i][jointDbReq.merge] = '';
                 }
             }
             
