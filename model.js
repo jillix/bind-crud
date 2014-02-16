@@ -236,41 +236,65 @@ function doDbRequest (request, callback) {
                     fieldA = findValue(a, sortField);
                     fieldB = findValue(b, sortField);
 
-                    // string
-                    if (typeof fieldA === "string") {
-                        if (order > 0) {
-                            return fieldA.localeCompare(fieldB);
-                        } else {
-                            return fieldB.localeCompare(fieldA);
-                        }
-                    // number
-                    } else if (typeof fieldA === "number") {
-                        if (order > 0) {
-                            return fieldA - fieldB;
-                        } else {
-                            return fieldB - fieldA;
-                        }
-                    // TODO Other data types?
-                    } else if (!fieldA) {
-                        if (order > 0) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    // date
-                    } else if (fieldA.constructor.name === "Date") {
-                        if (order > 0) {
-                            return fieldA > fieldB;
-                        } else {
-                            return fieldA < fieldB;
-                        }
-                    } else {
+                    // TODO Is this really required?
+                    if (getDataType(fieldA) !== getDataType(fieldB)) {
+
                         console.warn(
-                            "[Warning!] Unhandled sort data type: ", typeof fieldA,
-                            "\nConstructor: ", fieldA !== undefined ? fieldA.constructor.name : "undefined",
-                            "\nValue: ", JSON.stringify(fieldA, null, 4)
+                            "Different data types:" +
+                            "\nFieldA: " + JSON.stringify(fieldA) +
+                            "\nFieldB: " + JSON.stringify(fieldB) +
+                            "\nSkipping ..."
                         );
-                        return true;
+
+                        return 1;
+                    }
+
+                    switch (getDataType(fieldA)) {
+                        // string
+                        case "String":
+                            if (order > 0) {
+                                return fieldA.localeCompare(fieldB) < -1 ? -1 : 1;
+                            } else {
+                                return fieldB.localeCompare(fieldA) < -1 ? -1 : 1;
+                            }
+                            break;
+
+                        // number
+                        case "Number":
+                            if (order > 0) {
+                                return (fieldA - fieldB) < -1 ? -1 : 1;
+                            } else {
+                                return (fieldB - fieldA) < -1 ? -1 : 1;
+                            }
+                            break;
+
+                        // null and undefined
+                        case "null":
+                        case "undefined":
+                            if (order > 0) {
+                                return -1;
+                            } else {
+                                return 1;
+                            }
+                            break;
+
+                        // date
+                        case "Date":
+                            if (order > 0) {
+                                return new Date(fieldA) > new Date(fieldB) ? 1 : -1;
+                            } else {
+                                return new Date(fieldA) < new Date(fieldB) ? 1 : -1;
+                            }
+                            break;
+
+                        // TODO Other data types?
+                        default:
+                            console.warn(
+                                "[Warning!] Unhandled sort data type: ", typeof fieldA,
+                                "\nConstructor: ", fieldA.constructor.name,
+                                "\nValue: ", JSON.stringify(fieldA, null, 4)
+                            );
+                            break;
                     }
                 });
             }
@@ -376,3 +400,21 @@ module.exports = function (request, callback) {
     });
 };
 
+/*
+ *  Returns the data type of value
+ *
+ *  getDataType(0) -> "Number"
+ * */
+function getDataType (value) {
+
+    // null
+    if (value === null) return "null";
+
+    // undefined
+    if (value === undefined) return "undefined";
+
+    // Numbers, Strings , Booleans , Objects , null , undefined , Functions , Arrays , RegExps
+    if (value.constructor) {
+        return value.constructor.name;
+    }
+}
