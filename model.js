@@ -253,18 +253,18 @@ function doDbRequest (request, callback) {
                         // string
                         case "String":
                             if (order > 0) {
-                                return fieldA.localeCompare(fieldB) < -1 ? -1 : 1;
+                                return fieldA.localeCompare(fieldB);
                             } else {
-                                return fieldB.localeCompare(fieldA) < -1 ? -1 : 1;
+                                return fieldB.localeCompare(fieldA);
                             }
                             break;
 
                         // number
                         case "Number":
                             if (order > 0) {
-                                return (fieldA - fieldB) < -1 ? -1 : 1;
+                                return fieldA - fieldB;
                             } else {
-                                return (fieldB - fieldA) < -1 ? -1 : 1;
+                                return fieldB - fieldA;
                             }
                             break;
 
