@@ -116,6 +116,9 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here!
 
+#### `v0.2.14`
+- Fixed wrong behavior when sorting numbers and strings. Related to #29.
+
 #### `v0.2.13`
 - Fixed the wrong behavior when sorting dates
 - Improved the sort method.
