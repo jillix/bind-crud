@@ -111,10 +111,14 @@ myTemplate = {
 }
 ```
 
-### Change Log
+### Changelog
 
 #### `dev`
 - add fixes and new featured here!
+
+#### `v0.2.13`
+- Fixed the wrong behavior when sorting dates
+- Improved the sort method.
 
 #### `v0.2.12`
 - fixed item link bug that was nullifying itms with no linked objects
