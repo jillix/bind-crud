@@ -17,7 +17,7 @@ for (var i in METHODS) {
         // listeners
         var serverEvent = 'crud.' + method;
         M.on(serverEvent, function (request, callback) {
-            
+
             request.method = method;
             request.options = request.options || {};
 
@@ -102,7 +102,7 @@ function createResponseHandler (method, link) {
         if (["Cursor", "Array"].indexOf(constructorNameOfResults) !== -1) {
             link.res.headers['X-Mono-CRUD-Count'] = (readCount || 0).toString();
         }
- 
+
         if (method === 'read' && constructorNameOfResults === 'Cursor') {
 
             // stream result

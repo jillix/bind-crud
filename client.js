@@ -4,14 +4,14 @@ var templateCache = {};
 // merge linked templates
 function mergeTemplates (templates, callback) {
     var self = this;
-    
+
     for (var i = 0, l = templates.length, template; i < l; ++i) {
         for (var link in templates[i].linked) {
-            
+
             template = templates[i].linked[link].link;
-            
+
             if (templateCache[template]) {
-                
+
                 // hide link field
                 templates[i].schema[link].hidden = true;
                 templates[i].schema[link].noSearch = true;
@@ -99,34 +99,34 @@ function mergeTemplates (templates, callback) {
             }
         }
     }
-    
+
     callback(null, templates);
 }
 
 function templateHandler (templates, callback, ignoreLinks) {
     var self = this;
-    
+
     // check callback
     if (typeof callback !== 'function') {
         return;
     }
-    
+
     // collect templates from linked schema fields
     var linkedTemplates = [];
-    
+
     for (var i = 0, l = templates.length, _id; i < l; ++i) {
-        
+
         _id = templates[i]._id;
-        
+
         if (!templateCache[_id]) {
-            
+
             // save template in cache
             templateCache[_id] = templates[i];
-            
+
             if (!ignoreLinks) {
                 templates[i].linked = {};
                 for (var field in templates[i].schema) {
-                    
+
                     // collect linked templates
                     if (templates[i].schema[field].link) {
                         templates[i].linked[field] = templates[i].schema[field];
@@ -136,17 +136,17 @@ function templateHandler (templates, callback, ignoreLinks) {
             }
         }
     }
-    
+
     // fetch linked templates
     if (linkedTemplates.length > 0) {
         fetchTemplates.call(self, linkedTemplates, function (err) {
-            
+
             if (err) {
                 return callback(err);
             }
-            
+
             mergeTemplates(templates, callback);
-        
+
         // ignore fetching linked templates on linked templates (only 1 level)
         }, true);
     } else {
@@ -157,11 +157,11 @@ function templateHandler (templates, callback, ignoreLinks) {
 // TODO callback buffering
 function fetchTemplates (data, callback, ignoreLinks) {
     var self = this;
-    
+
     if (!data) {
         return callback(new Error(self.miid + '|crud: Crud object is needed to fetch tempaltes'));
     }
-    
+
     if (data instanceof Array) {
         data = {
             t: templateId,
@@ -185,20 +185,20 @@ function fetchTemplates (data, callback, ignoreLinks) {
                 query.push(data.q._id.$in[i]);
             }
         }
-        
+
         if (query.length === 0) {
             return templateHandler.call(self, cached, callback, ignoreLinks);
         } else {
             data.q._id.$in = query;
         }
     }
-    
+
     self.link('read', {data: data}, function (err, templates) {
-        
+
         if (err || data.noMerge) {
             return callback(err, templates);
         }
-        
+
         // add fetched templates to cached
         if (data.q && data.q._id && data.q._id.$in) {
             for (var i = 0, l = templates.length; i < l; ++i) {
@@ -208,62 +208,62 @@ function fetchTemplates (data, callback, ignoreLinks) {
                     }
                 }
             }
-            
+
             templates = cached;
         }
-        
+
         templateHandler.call(self, templates, callback, ignoreLinks);
     });
 }
 
 function setTemplateHandler (template, noRefresh) {
     var self = this;
-    
+
     // save current template
     self.template = templates[0];
-    
+
     if (!noRefresh) {
         self.emit('refresh');
     }
-    
+
     self.emit('templateSet', self.template);
 }
 
 function setTemplate (template, noRefresh) {
     var self = this;
-    
+
     // check cache
     if (templateCache[template]) {
         return setTemplateHandler.call(self, [templateCache[template]], noRefresh);
     }
-    
+
     // fetch template
     self.emit('read', [template], function (err, templates) {
-        
+
         if (err || !templates || !templates[0]) {
             return self.emit('crudError', err || new Error(self.miid + '|crud: Template not found.'));
         }
-        
+
         setTemplateHandler.call(self, templates, noRefresh);
     });
 }
 
 function handler (method, data, callback) {
     var self = this;
-    
+
     // check query data
     if (!data) {
         return self.emit('crudError', new Error(self.miid + '|crud: No data for query.'));
     }
-    
+
     // check if a template id is available
     if (!data.t && (!self.template || !self.template._id)) {
         return callback(new Error(self.miid + '|crud: No template id for query.'));
     }
-    
+
     // get template id for request
     data.t = data.t || self.template._id;
-    
+
     // do request
     self.link(method, {data: data}, callback);
 }
@@ -272,4 +272,3 @@ exports.handler = handler;
 exports.fetchTemplates = fetchTemplates;
 exports.setTemplate = setTemplate;
 exports.templateId = templateId;
-

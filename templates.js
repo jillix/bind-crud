@@ -117,9 +117,9 @@ function getTemplate (request, callback) {
             err.statusCode = err.statusCode || 500;
             return callback(err);
         }
-       
-       
-       
+
+
+
         if (!template || !template.length) {
             err = new Error('Templates not found.');
             err.statusCode = 404;
@@ -201,17 +201,17 @@ function getAccessKey (method) {
 
 // check access
 function checkAccess (template, role, method) {
-    
+
     // grant access for templates without roles or for the role wildcard
     if (!template.roles || (template.roles['*'] && typeof template.roles['*'].access === 'string' && template.roles['*'].access.indexOf(getAccessKey(method)) > -1)) {
         return true;
     }
-    
+
     // check if role has read rights
     if (template.roles[role] && typeof template.roles[role].access === 'string' && template.roles[role].access.indexOf(getAccessKey(method)) > -1) {
         return true;
     }
-    
+
     return false;
 }
 
@@ -228,40 +228,40 @@ function initAndCache (template) {
             db: {w: 1}
         })
     };
-    
+
     // add mandatory field _tp
     template.schema._tp = {
         type: 'objectid',
         required: true
     };
-    
+
     // add mandatory field _id
     template.schema._id = {
         type: 'objectid',
         required: true
     };
-    
+
     // add mandatory field _li
     template.schema._li = [{
         type: 'objectid'
     }];
-    
+
     template._modm.schema = new modm.Schema(template.schema);
     template._modm.collection = template._modm.model(template.collection, template._modm.schema);
-    
+
     template.schema = template._modm.schema.paths;
-    
+
     // collect all links for faster access
     for (var field in template.schema) {
         if (template.schema[field].link) {
             if (!template.linkedFields) {
                 template.linkedFields = {};
             }
-            
+
             template.linkedFields[field] = template.schema[field];
         }
     }
-    
+
     templateCache[template._id] = template;
     return templateCache[template._id];
 }
@@ -354,32 +354,32 @@ function fetchTemplates (request, callback) {
     // TODO handle $in queries with cache
     else if (request.query.constructor.name === 'Object') {
         oldCached.cached = [];
-        
+
         dbReq.query = request.query;
         dbReq.options = request.options;
         dbReq.options.fields = {};
     }
-    
+
     // check access on template item
     dbReq.query._tp = modm.ObjectId(CORE_TEMPLATE_IDS.templates);
     dbReq.query['roles.' + request.role + '.access'] = {$regex: getAccessKey(request.method)};
 
     // fetch requested templates from db
     io.read(dbReq, function (err, cursor) {
-        
+
         if (err) {
             err.statusCode = 500;
             return callback(err);
         }
-        
+
         if (!cursor) {
             err = new Error('Templates not found.');
             err.statusCode = 404;
             return callback(err);
         }
-        
+
         cursor.toArray(function (err, templates) {
-            
+
             if (err) {
                 err.statusCode = 500;
                 return callback(err);
@@ -401,7 +401,7 @@ function fetchTemplates (request, callback) {
             var newCached = getCachedTemplates(newTemplates, request.role, request.method);
             // merge with initially cached templates
             oldCached.cached = oldCached.cached.concat(newCached.cached);
-            
+
             callback(null, oldCached.cached);
         });
     });
@@ -459,4 +459,3 @@ function cloneJSON(obj) {
     }
     return cloneO;
 }
-
