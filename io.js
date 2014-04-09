@@ -60,7 +60,6 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                 jointData[jointResult[i]._id] = jointResult[i];
             }
 
-            debugger;
             // merge linked data
             for (var i = 0, l = result.length; i < l; ++i) {
 
