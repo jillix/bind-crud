@@ -60,6 +60,7 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                 jointData[jointResult[i]._id] = jointResult[i];
             }
 
+            debugger;
             // merge linked data
             for (var i = 0, l = result.length; i < l; ++i) {
 
@@ -111,7 +112,7 @@ function jointResponse (dbReq, cursor, callback) {
             }
 
             // get linked data
-            jointRequest(dbReq, dbReq.joints[joint], result, function (err, emtpy) {
+            jointRequest(dbReq, dbReq.joints[joint], result, function (err) {
 
                 if (err) {
                     return callback(err);
