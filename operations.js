@@ -96,7 +96,7 @@ function createResponseHandler (method, link) {
         // TODO How can this be fixed using a better way?
         var constructorNameOfResults = results.constructor.name;
         if (results && constructorNameOfResults === "Object" && typeof results.toArray === "function") {
-            constructorNameOfResults = "Cursor"
+            constructorNameOfResults = "Cursor";
         }
 
          // if we have an array or a cursor, set X-Mono-CRUD-Count response header
