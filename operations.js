@@ -85,8 +85,9 @@ function createRequest (method, link) {
 
 function createResponseHandler (method, link) {
     return function(err, results, readCount) {
+
         if (err) {
-            return link.send(err.statusCode || 500, err.message || err);
+            return link.send(err.statusCode || 500, err.message || err.toString() || err);
         }
 
         link.res.headers['content-type'] = 'application/json; charset=utf-8';
