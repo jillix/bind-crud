@@ -37,7 +37,7 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
 
         cursor.toArray(function (err, jointResult) {
 
-            if (err || jointResult.length === 0) {
+            if (err) {
                 return callback(err);
             }
 
