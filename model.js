@@ -151,10 +151,7 @@ function createJoints (request, callback) {
     }
 
     // convert linked tempaltes object to an array
-    var linkedTemplatesToLoad_array = [];
-    for (var template in linkedTemplatesToLoad) {
-        linkedTemplatesToLoad_array.push(template);
-    }
+    var linkedTemplatesToLoad_array = Object.keys(linkedTemplatesToLoad)
 
     // get linked templates
     templates.getMergeTemplates(linkedTemplatesToLoad_array, request.role, function (err, fetchedTemplates) {
@@ -275,6 +272,7 @@ module.exports = function (request, callback) {
 
         // make joins only on find requests and when template has linked fields
         if (request.method === 'read' && request.template.linkedFields && !request.noJoins) {
+
             createJoints(request, function (err, joints, length) {
 
                 if (err) {
