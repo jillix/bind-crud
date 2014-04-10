@@ -1,17 +1,33 @@
-function sendJointResult (result, sort, callback) {
+function sendJointResult (result, sort, skip, limit, callback) {
 
+    // build the final items
     var items = [];
 
-    for (var i = 0, l = result.length; i < l; ++i) {
-        if (result[i]) {
-            items.push(result[i]);
-        }
+    // each result object
+    for (var i = 0; i < result.length; ++i) {
+
+        // get the current result object
+        var cResult = result[i];
+
+        // if it's null, just continue
+        if (cResult === null) { continue; }
+
+        // if it is NOT null, push it
+        items.push(cResult);
     }
 
-    callback(null, result);
+    // get the count
+    var count = items.length;
+
+    // take the part of array that must be sent on the client
+    items = items.slice(skip, skip + limit);
+
+    // callback
+    callback(null, items, count);
 }
 
 function jointRequest (dbReq, jointDbReq, result, callback) {
+
     jointDbReq.template._modm.collection.find(jointDbReq.query, jointDbReq.options, function (err, cursor) {
 
         // ignore query when no items in result
@@ -28,22 +44,29 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
             // create joint object
             var jointData = {};
             for (var i = 0, l = jointResult.length; i < l; ++i) {
-                jointData[jointResult[i]._id] = jointResult[i];
+
+                // get the current joint result object
+                var cJointResult = jointResult[i];
+
+                // set it in joint data
+                jointData[cJointResult._id] = cJointResult;
             }
 
             // merge linked data
             for (var i = 0, l = result.length; i < l; ++i) {
 
+                // get the current result object
+                var cResult = result[i];
                 if (
-                    result[i] &&
-                    result[i][jointDbReq.merge] &&
-                    jointData[result[i][jointDbReq.merge]] &&
-                    jointData[result[i][jointDbReq.merge]]._id.toString() === result[i][jointDbReq.merge].toString()
+                    cResult &&
+                    cResult[jointDbReq.merge] &&
+                    jointData[cResult[jointDbReq.merge]] &&
+                    jointData[cResult[jointDbReq.merge]]._id.toString() === cResult[jointDbReq.merge].toString()
                 ) {
                     // merge linked data in result field
-                    result[i][jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
+                    cResult[jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
                 } else {
-                    result[i][jointDbReq.merge] = '';
+                    result[i] = null;
                 }
             }
 
@@ -52,8 +75,12 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
     });
 }
 
-function jointResponse (dbReq, cursor, callback) {
+function jointResponse (dbReq, cursor, skip, limit, callback) {
 
+    // skip not provided, set it 0
+    skip = skip || 0;
+
+    // convert cursor to array
     cursor.toArray(function (err, result) {
 
         if (err) {
@@ -68,28 +95,37 @@ function jointResponse (dbReq, cursor, callback) {
         var current = 0;
         for (var joint in dbReq.joints) {
 
+            // get the current joint object
+            var cJoint = dbReq.joints[joint];
+
             // set limit to length of result
-            dbReq.joints[joint].options.limit = result.length;
+            cJoint.options.limit = result.length;
+            delete cJoint.options.limit;
+            delete cJoint.options.skip;
 
             // get ids from linked fields
             var uniqueId = {};
-            dbReq.joints[joint].query._id = {$in: []};
+            cJoint.query._id = {$in: []};
             for (var i = 0, l = result.length; i < l; ++i) {
-                if (!uniqueId[result[i][dbReq.joints[joint].merge]] && result[i][dbReq.joints[joint].merge]) {
-                    uniqueId[result[i][dbReq.joints[joint].merge]] = 1;
-                    dbReq.joints[joint].query._id.$in.push(result[i][dbReq.joints[joint].merge]);
+
+                // get the current result object
+                var cResult = result[i];
+
+                if (!uniqueId[cResult[cJoint.merge]] && cResult[cJoint.merge]) {
+                    uniqueId[cResult[cJoint.merge]] = 1;
+                    cJoint.query._id.$in.push(cResult[cJoint.merge]);
                 }
             }
 
             // get linked data
-            jointRequest(dbReq, dbReq.joints[joint], result, function (err) {
+            jointRequest(dbReq, cJoint, result, function (err) {
 
                 if (err) {
                     return callback(err);
                 }
 
                 if (++current === dbReq.jointsLength) {
-                    sendJointResult(result, dbReq.options.sort, callback);
+                    sendJointResult(result, dbReq.options.sort, skip, limit, callback);
                 }
             });
         }
@@ -103,6 +139,21 @@ exports.create = function (dbReq, callback) {
 };
 
 exports.read = function (dbReq, callback) {
+
+
+    // delete limit
+    if (dbReq.joints) {
+
+        // get skip and limit
+        var limit = dbReq.options.limit
+          , skip  = dbReq.options.skip
+          ;
+
+        // then delete them
+        delete dbReq.options.limit;
+        delete dbReq.options.skip;
+    }
+
     // get data and count
     dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
 
@@ -118,7 +169,7 @@ exports.read = function (dbReq, callback) {
 
             // merge linked data in result data
             if (dbReq.joints) {
-                return jointResponse(dbReq, cursor, function (err, result) {
+                return jointResponse(dbReq, cursor, skip, limit, function (err, result, count) {
                     callback(err, result, count);
                 });
             }
