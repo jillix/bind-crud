@@ -8,35 +8,6 @@ function sendJointResult (result, sort, callback) {
         }
     }
 
-    // sort result
-    if (sort && (sort = sort[0])) {
-
-        sort[0] = sort[0].split('.');
-
-        items.sort(function compare(a,b) {
-
-            for (var i = 0, l = sort[0].length; i < l; ++i) {
-                if (a[sort[0][i]]) {
-                    a = a[sort[0][i]];
-                }
-
-                if (b[sort[0][i]]) {
-                    b = b[sort[0][i]];
-                }
-            }
-
-            if (a < b) {
-                return (sort[1] * -1);
-            }
-
-            if (a > b) {
-                return sort[1];
-            }
-
-            return 0;
-        });
-    }
-
     callback(null, result);
 }
 
