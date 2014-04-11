@@ -68,9 +68,9 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
         // continue if no sort field or the sort field is not a linked field (native fields are sorted by Mongo)
         // TODO Multiple sort
-        // if (!sortField || jointMerges.indexOf(sortField.substring(0, sortField.indexOf("."))) === -1) {
-        //     continue;
-        // }
+        if (!sortField || jointMerges.indexOf(sortField.substring(0, sortField.indexOf("."))) === -1) {
+            continue;
+        }
 
         // finally sort the items
         items.sort(function (a, b) {
@@ -125,7 +125,6 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
                 // date
                 case "Date":
-                    console.log(fieldA, fieldB);
                     if (order > 0) {
                         return new Date(fieldA) > new Date(fieldB) ? 1 : -1;
                     } else {
