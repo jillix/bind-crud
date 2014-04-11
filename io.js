@@ -46,20 +46,9 @@ function getDataType (value) {
 function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
     // build the final items
-    var items = [];
+    var items = result;
 
-    // each result object
-    for (var i = 0; i < result.length; ++i) {
-
-        // get the current result object
-        var cResult = result[i];
-
-        // if it's null, just continue
-        if (cResult === null) { continue; }
-
-        // if it is NOT null, push it
-        items.push(cResult);
-    }
+    debugger;
 
     for (var i = 0; i < sort.length; ++i) {
 
@@ -130,6 +119,7 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
                 // date
                 case "Date":
+                    console.log(fieldA, fieldB, order);
                     if (order > 0) {
                         return new Date(fieldA) > new Date(fieldB) ? 1 : -1;
                     } else {
@@ -176,13 +166,17 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
 
             // create joint object
             var jointData = {};
-            for (var i = 0, l = jointResult.length; i < l; ++i) {
+            for (var i = 0; i < jointResult.length; ++i) {
 
                 // get the current joint result object
                 var cJointResult = jointResult[i];
 
                 // set it in joint data
                 jointData[cJointResult._id] = cJointResult;
+            }
+
+            if (dbReq.options.sort) {
+                debugger;
             }
 
             // merge linked data
@@ -199,7 +193,8 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                     // merge linked data in result field
                     cResult[jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
                 } else {
-                    result[i] = null;
+                    // remove object from result
+                    result.splice(i, 1);
                 }
             }
 
@@ -235,6 +230,7 @@ function jointResponse (dbReq, cursor, skip, limit, callback) {
             // get the current joint object
             var cJoint = dbReq.joints[joint];
 
+            debugger;
             // merge sorts
             mergedSort = mergedSort.concat(cJoint.options.sort);
 
