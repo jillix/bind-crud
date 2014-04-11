@@ -125,7 +125,6 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
                 // date
                 case "Date":
-                    console.log(fieldA, fieldB, order);
                     if (order > 0) {
                         return new Date(fieldA) > new Date(fieldB) ? 1 : -1;
                     } else {
