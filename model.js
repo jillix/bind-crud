@@ -130,12 +130,12 @@ function createJoints (request, callback) {
 
         // get sort for linked template
         if (requestSort && requestSort.constructor === Array) {
-            //         "sort": [
-            //             [
-            //                 "client.email",
-            //                 1
-            //             ]
-            //         ],
+            // "sort": [
+            //     [
+            //         "client.email",
+            //         1
+            //     ]
+            // ],
             for (var i = 0; i < requestSort.length; ++i) {
 
                 // get the sort array
