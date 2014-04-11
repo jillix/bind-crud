@@ -1,4 +1,49 @@
-function sendJointResult (result, sort, skip, limit, callback) {
+/*
+ *  e.g. findValue({
+ *      a: {
+ *          b: {
+ *              c: 10
+ *          }
+ *      }
+ *  }, "a.b.c") === 10 // true
+ *
+ * */
+function findValue (parent, dotNot) {
+
+    if (!dotNot || !parent) return undefined;
+
+    var splits = dotNot.split(".");
+    var value;
+
+    for (var i = 0; i < splits.length; i++) {
+        value = parent[splits[i]];
+        if (value === undefined) return undefined;
+        if (typeof value === "object") parent = value;
+    }
+
+    return value;
+}
+
+/*
+ *  Returns the data type of value
+ *
+ *  getDataType(0) -> "Number"
+ * */
+function getDataType (value) {
+
+    // null
+    if (value === null) return "null";
+
+    // undefined
+    if (value === undefined) return "undefined";
+
+    // Numbers, Strings , Booleans , Objects , null , undefined , Functions , Arrays , RegExps
+    if (value.constructor) {
+        return value.constructor.name;
+    }
+}
+
+function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
     // build the final items
     var items = [];
@@ -14,6 +59,94 @@ function sendJointResult (result, sort, skip, limit, callback) {
 
         // if it is NOT null, push it
         items.push(cResult);
+    }
+
+    for (var i = 0; i < sort.length; ++i) {
+
+        // get the current sort array
+        // > sort
+        //     [ [ 'client.email', 1 ] ]
+        var cSort = sort[i]
+          , sortField = cSort[0]
+          , order = cSort[1]
+          ;
+
+        // continue if no sort field or the sort field is not a linked field (native fields are sorted by Mongo)
+        // TODO Multiple sort
+        if (!sortField || jointMerges.indexOf(sortField.substring(0, sortField.indexOf("."))) === -1) {
+            continue;
+        }
+
+        // finally sort the items
+        items.sort(function (a, b) {
+
+            // find the sort field in items
+            var fieldA = findValue(a, sortField) || ""
+              , fieldB = findValue(b, sortField) || ""
+              ;
+
+            // TODO Is this really required?
+            if (getDataType(fieldA) !== getDataType(fieldB)) {
+
+                console.warn(
+                    "Different data types:" +
+                    "\nFieldA: " + JSON.stringify(fieldA) +
+                    "\nFieldB: " + JSON.stringify(fieldB) +
+                    "\nSkipping ..." +
+                    "\n------------"
+                );
+
+                return 1;
+            }
+
+            switch (getDataType(fieldA)) {
+                // string
+                case "String":
+                    if (order > 0) {
+                        return fieldA.localeCompare(fieldB);
+                    } else {
+                        return fieldB.localeCompare(fieldA);
+                    }
+                    break;
+
+                // number
+                case "Number":
+                    if (order > 0) {
+                        return fieldA - fieldB;
+                    } else {
+                        return fieldB - fieldA;
+                    }
+                    break;
+
+                // null and undefined
+                case "null":
+                case "undefined":
+                    if (order > 0) {
+                        return -1;
+                    } else {
+                        return 1;
+                    }
+                    break;
+
+                // date
+                case "Date":
+                    if (order > 0) {
+                        return new Date(fieldA) > new Date(fieldB) ? 1 : -1;
+                    } else {
+                        return new Date(fieldA) < new Date(fieldB) ? 1 : -1;
+                    }
+                    break;
+
+                // TODO Other data types?
+                default:
+                    console.warn(
+                        "[Warning!] Unhandled sort data type: ", typeof fieldA,
+                        "\nConstructor: ", fieldA.constructor.name,
+                        "\nValue: ", JSON.stringify(fieldA, null, 4)
+                    );
+                    break;
+            }
+        });
     }
 
     // get the count
@@ -92,11 +225,21 @@ function jointResponse (dbReq, cursor, skip, limit, callback) {
             return callback(null, []);
         }
 
-        var current = 0;
+        var current = 0
+          , mergedSort = []
+          , jointMerges = []
+          ;
+
         for (var joint in dbReq.joints) {
 
             // get the current joint object
             var cJoint = dbReq.joints[joint];
+
+            // merge sorts
+            mergedSort = mergedSort.concat(cJoint.options.sort);
+
+            // add the merge joint
+            jointMerges.push (cJoint.merge);
 
             // set limit to length of result
             cJoint.options.limit = result.length;
@@ -125,7 +268,7 @@ function jointResponse (dbReq, cursor, skip, limit, callback) {
                 }
 
                 if (++current === dbReq.jointsLength) {
-                    sendJointResult(result, dbReq.options.sort, skip, limit, callback);
+                    sendJointResult(result, jointMerges, mergedSort, skip, limit, callback);
                 }
             });
         }

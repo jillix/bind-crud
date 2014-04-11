@@ -2,33 +2,6 @@ var io = require('./io');
 var templates = require('./templates');
 var ObjectId = require('modm').ObjectId;
 
-/*
- *  e.g. findValue({
- *      a: {
- *          b: {
- *              c: 10
- *          }
- *      }
- *  }, "a.b.c") === 10 // true
- *
- * */
-function findValue (parent, dotNot) {
-
-    if (!dotNot) return undefined;
-    if (!parent) return undefined;
-
-    var splits = dotNot.split(".");
-    var value;
-
-    for (var i = 0; i < splits.length; i++) {
-        value = parent[splits[i]];
-        if (value === undefined) return undefined;
-        if (typeof value === "object") parent = value;
-    }
-
-    return value;
-}
-
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 
     if (typeof obj === 'undefined') {
@@ -107,8 +80,11 @@ function createJoints (request, callback) {
         // schema paths to validate field in linked schema
         if (!linkedTemplatesToLoad[schema[field].link]) {
             linkedTemplatesToLoad[schema[field].link] = {
-                query: {},
-                merge: field
+                query: {}
+              , options: {
+                    sort: []
+                }
+              , merge: field
             };
         }
 
@@ -148,6 +124,48 @@ function createJoints (request, callback) {
                 delete request.query[queryField];
             }
         }
+
+        // get sort value
+        var requestSort = request.options.sort;
+
+        // get sort for linked template
+        if (requestSort && requestSort.constructor === Array) {
+            //         "sort": [
+            //             [
+            //                 "client.email",
+            //                 1
+            //             ]
+            //         ],
+            for (var i = 0; i < requestSort.length; ++i) {
+
+                // get the sort array
+                var cSort = requestSort[i];
+
+                // make sure that it's an array that contains the two fields
+                if (!cSort || cSort.constructor !== Array || !cSort[0] || !cSort[1]) {
+                    continue;
+                }
+
+                // get its values
+                var sortField = cSort[0]
+                  , sortValue = cSort[1]
+                  ;
+
+                // we have to sort a linked field
+                if (sortField !== field && sortField.indexOf(field) === 0) {
+
+                    // push the new sort field
+                    linkedTemplatesToLoad[schema[field].link].options.sort.push([
+                        // commenting this out to handle sorting in io.js
+                        sortField // .substr(field.length + 1)
+                      , sortValue
+                    ]);
+
+                    // remove current sort from sort fields
+                    requestSort.splice (i, 1);
+                }
+            }
+        }
     }
 
     // convert linked tempaltes object to an array
@@ -164,15 +182,19 @@ function createJoints (request, callback) {
         var mergeRequests = {};
         for (var i = 0, l = fetchedTemplates.length; i < l; ++i) {
 
+            // get the current fetched template
+            var cFetchedTemplate = fetchedTemplates[i];
+
             // create merge request
-            mergeRequests[fetchedTemplates[i]._id] = {
-                role: request.role,
-                options: {
-                    fields: linkedTemplatesToLoad[fetchedTemplates[i]._id].fields
-                },
-                template: fetchedTemplates[i],
-                query: linkedTemplatesToLoad[fetchedTemplates[i]._id].query,
-                merge: linkedTemplatesToLoad[fetchedTemplates[i]._id].merge
+            mergeRequests[cFetchedTemplate._id] = {
+                role: request.role
+              , options: {
+                    fields: linkedTemplatesToLoad[cFetchedTemplate._id].fields
+                  , sort:   linkedTemplatesToLoad[cFetchedTemplate._id].options.sort
+                }
+              , template: cFetchedTemplate
+              , query: linkedTemplatesToLoad[cFetchedTemplate._id].query
+              , merge: linkedTemplatesToLoad[cFetchedTemplate._id].merge
             };
 
             // make sure _id is always returned
@@ -182,7 +204,7 @@ function createJoints (request, callback) {
 
             // take limit from request
             if (request.options.limit) {
-                mergeRequests[fetchedTemplates[i]._id].options.limit = request.options.limit;
+                mergeRequests[cFetchedTemplate._id].options.limit = request.options.limit;
             }
         }
 
