@@ -46,9 +46,15 @@ function getDataType (value) {
 function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
     // build the final items
-    var items = result;
+    var items = [];
 
-    debugger;
+    // filter the non-null results
+    for (var i = 0; i < result.length; ++i) {
+        if (result[i] === null) {
+            continue;
+        }
+        items.push(result[i]);
+    }
 
     for (var i = 0; i < sort.length; ++i) {
 
@@ -175,10 +181,6 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                 jointData[cJointResult._id] = cJointResult;
             }
 
-            if (dbReq.options.sort) {
-                debugger;
-            }
-
             // merge linked data
             for (var i = 0, l = result.length; i < l; ++i) {
 
@@ -193,8 +195,9 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                     // merge linked data in result field
                     cResult[jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
                 } else {
+
                     // remove object from result
-                    result.splice(i, 1);
+                    result[i] = null;
                 }
             }
 
@@ -230,7 +233,6 @@ function jointResponse (dbReq, cursor, skip, limit, callback) {
             // get the current joint object
             var cJoint = dbReq.joints[joint];
 
-            debugger;
             // merge sorts
             mergedSort = mergedSort.concat(cJoint.options.sort);
 
@@ -245,6 +247,7 @@ function jointResponse (dbReq, cursor, skip, limit, callback) {
             // get ids from linked fields
             var uniqueId = {};
             cJoint.query._id = {$in: []};
+
             for (var i = 0, l = result.length; i < l; ++i) {
 
                 // get the current result object
