@@ -147,6 +147,11 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
     // get the count
     var count = items.length;
 
+    // set limit value if it's undefined
+    if (typeof limit === "undefined") {
+        limit = items.length;
+    }
+
     // take the part of array that must be sent on the client
     items = items.slice(skip, skip + limit);
 
@@ -280,7 +285,6 @@ exports.create = function (dbReq, callback) {
 };
 
 exports.read = function (dbReq, callback) {
-
 
     // delete limit
     if (dbReq.joints) {
