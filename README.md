@@ -113,7 +113,7 @@ myTemplate = {
 
 ### Changelog
 
-#### `dev`
+#### `v0.3.0-beta`
 - add fixes and new featured here
 - fixed the linked field filtering
 - removed JavaScript sorting after receiving the Mongo response
