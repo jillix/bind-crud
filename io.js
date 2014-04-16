@@ -1,3 +1,22 @@
+// get object id
+var ObjectId = require ("mongodb").ObjectID;
+
+function getValidItems (result) {
+
+    // build the final items
+    var items = [];
+
+    // filter the non-null results
+    for (var i = 0; i < result.length; ++i) {
+        if (result[i] === null) {
+            continue;
+        }
+        items.push(result[i]);
+    }
+
+    return items;
+}
+
 /*
  *  e.g. findValue({
  *      a: {
@@ -45,16 +64,8 @@ function getDataType (value) {
 
 function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
-    // build the final items
-    var items = [];
-
-    // filter the non-null results
-    for (var i = 0; i < result.length; ++i) {
-        if (result[i] === null) {
-            continue;
-        }
-        items.push(result[i]);
-    }
+    // filter result
+    var items = getValidItems (result);
 
     for (var i = 0; i < sort.length; ++i) {
 
@@ -176,6 +187,14 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
 
             // create joint object
             var jointData = {};
+
+            // query has just the _id field
+            if (Object.keys(jointDbReq.query).length === 1) {
+                jointData["000000000000000000000000"] = {
+                    _id: ObjectId ("000000000000000000000000")
+                };
+            }
+
             for (var i = 0; i < jointResult.length; ++i) {
 
                 // get the current joint result object
@@ -190,6 +209,7 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
 
                 // get the current result object
                 var cResult = result[i];
+
                 if (
                     cResult &&
                     cResult[jointDbReq.merge] &&
