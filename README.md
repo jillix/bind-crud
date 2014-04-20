@@ -113,6 +113,9 @@ myTemplate = {
 
 ### Changelog
 
+#### `dev`
+ - Convert cursor to array when using server events
+
 #### `v0.3.0-beta`
 - add fixes and new featured here
 - fixed the linked field filtering
