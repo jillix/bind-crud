@@ -115,6 +115,7 @@ myTemplate = {
 
 #### `dev`
  - Convert cursor to array when using server events
+ - Handle array joins (objectids)
 
 #### `v0.3.0-beta`
 - add fixes and new featured here
