@@ -293,7 +293,7 @@ module.exports = function (request, callback) {
         }
 
         // make joins only on find requests and when template has linked fields
-        if (request.method === 'read' && request.template.linkedFields && !request.noJoins) {
+        if (request.method === 'read' && request.template.linkedFields && !(request.template.options || {}).noJoins && !request.noJoins) {
 
             createJoints(request, function (err, joints, length) {
 
