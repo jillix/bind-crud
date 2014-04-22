@@ -52,10 +52,13 @@ for (var i in METHODS) {
 
                 // handle cursor
                 if (typeof data.toArray === "function") {
-                    data.toArray (function (err, docs) {
+                    return data.toArray (function (err, docs) {
                         callback (err, docs, count);
                     });
                 }
+
+                // for non read operations
+                callback (err, data, count);
             });
         });
     })(METHODS[i]);

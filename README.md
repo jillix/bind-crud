@@ -122,6 +122,7 @@ myTemplate = {
 - fixed the linked field filtering
 - removed JavaScript sorting after receiving the Mongo response
 - sort linked fields using JavaScript sort methods after we have the full result array
+- callback the data after running non-read operations and server events
 
 #### `v0.2.14`
 - Fixed wrong behavior when sorting numbers and strings. Related to #29.
