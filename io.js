@@ -62,6 +62,50 @@ function getDataType (value) {
     }
 }
 
+function mergeResults (cResult, jointData, jointDbReq) {
+    var okToMerge = canBeMerged(cResult, jointData, jointDbReq);
+    if (okToMerge) {
+        return okToMerge;
+    } else {
+        return null;
+    }
+}
+
+function canBeMerged (cResult, jointData, jointDbReq) {
+
+    // missing cresult or field to merge
+    if (!cResult || !cResult[jointDbReq.merge]) return false;
+
+    // handle array values
+    if (cResult[jointDbReq.merge].constructor === Array) {
+        var okToMerge = []
+          , oids = cResult[jointDbReq.merge]
+          ;
+
+        for (var i = 0; i < oids.length; ++i) {
+
+            var currentOid = oids[i];
+
+            if (
+                jointData[currentOid] &&
+                jointData[currentOid]._id.toString() === currentOid.toString()
+            ) {
+                okToMerge.push(jointData[currentOid]);
+            }
+        }
+
+        return okToMerge;
+    }
+
+    // non array fields
+    if (
+        jointData[cResult[jointDbReq.merge]] &&
+        jointData[cResult[jointDbReq.merge]]._id.toString() === cResult[jointDbReq.merge].toString()
+    ) {
+        return jointData[cResult[jointDbReq.merge]];
+    }
+}
+
 function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
 
     // filter result
@@ -210,19 +254,7 @@ function jointRequest (dbReq, jointDbReq, result, callback) {
                 // get the current result object
                 var cResult = result[i];
 
-                if (
-                    cResult &&
-                    cResult[jointDbReq.merge] &&
-                    jointData[cResult[jointDbReq.merge]] &&
-                    jointData[cResult[jointDbReq.merge]]._id.toString() === cResult[jointDbReq.merge].toString()
-                ) {
-                    // merge linked data in result field
-                    cResult[jointDbReq.merge] = jointData[result[i][jointDbReq.merge]];
-                } else {
-
-                    // remove object from result
-                    result[i] = null;
-                }
+                cResult[jointDbReq.merge] = mergeResults (cResult, jointData, jointDbReq);
             }
 
             callback();
@@ -275,11 +307,29 @@ function jointResponse (dbReq, cursor, skip, limit, callback) {
             for (var i = 0, l = result.length; i < l; ++i) {
 
                 // get the current result object
-                var cResult = result[i];
+                var cResult = result[i]
+                  , joinValue = cResult[cJoint.merge]
+                  ;
 
-                if (!uniqueId[cResult[cJoint.merge]] && cResult[cJoint.merge]) {
-                    uniqueId[cResult[cJoint.merge]] = 1;
-                    cJoint.query._id.$in.push(cResult[cJoint.merge]);
+                // handle no array values
+                if (!uniqueId[joinValue] && joinValue && joinValue.constructor !== Array) {
+                    uniqueId[joinValue] = 1;
+                    cJoint.query._id.$in.push(joinValue);
+                }
+
+                // handle array values
+                if (!uniqueId[joinValue] && joinValue && joinValue.constructor === Array) {
+
+                    // each element
+                    for (var ii = 0; ii < joinValue.length; ++ii) {
+
+                        // already pushed, continue
+                        if (uniqueId[joinValue[ii]]) continue;
+
+                        // set unique id
+                        uniqueId[joinValue[ii]] = 1;
+                        cJoint.query._id.$in.push(joinValue[ii]);
+                    }
                 }
             }
 

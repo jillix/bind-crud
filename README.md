@@ -113,13 +113,19 @@ myTemplate = {
 
 ### Changelog
 
-#### `v0.3.0 betas`
+<<<<<<< HEAD
+=======
+#### `dev`
 - add fixes and new featured here
+
+### `v0.3.0 betas`
+#### `v0.3.0-beta`
 - fixed the linked field filtering
-- removed JavaScript sorting after receiving the Mongo response
 - sort linked fields using JavaScript sort methods after we have the full result array
 - added `noJoins: true` template option to disable linked template joining
 - get template requests filter out all roles except the user role
+- callback the data after running non-read operations and server events
+- convert cursor to array when using server events
 
 #### `v0.2.14`
 - Fixed wrong behavior when sorting numbers and strings. Related to #29.
