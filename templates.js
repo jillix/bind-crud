@@ -175,13 +175,27 @@ function getTemplates (request, callback) {
             // delete private fields from result templates
             for (var field in templates[i]) {
                 if ((admin || !PRIVATE_FIELDS[field]) && field !== '_modm') {
-                    result[i][field] = templates[i][field];
+                    // clone for template parts that will be modified
+                    if (['roles'].indexOf(field) !== -1) {
+                        result[i][field] = JSON.parse(JSON.stringify(templates[i][field]));
+                    }
+                    else {
+                        result[i][field] = templates[i][field];
+                    }
+
                 }
             }
 
             // we must overwrite the template with the role configuration
             if (templates[i].roles[request.role] && templates[i].roles[request.role].config) {
                 mergeRoleTemplateConfig(result[i], templates[i].roles[request.role].config);
+            }
+
+            // leave only the user role in this template
+            for (var role in result[i].roles) {
+                if (role != request.role) {
+                    delete result[i].roles[role];
+                }
             }
         }
 
