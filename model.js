@@ -224,7 +224,12 @@ function doDbRequest (request, callback) {
     // do input/output
     io[request.method](request, function (err, data, readCount) {
 
-        callback (err, data, readCount);
+        if (typeof request.template.callback === 'string') {
+            M.emit('crud:' + request.template.callback, request, err, data, readCount, callback);
+        } else {
+            callback (err, data, readCount);
+        }
+
         // emit a server event
         if (request.template.on && request.template.on[request.method]) {
             for (var event in request.template.on[request.method]) {
