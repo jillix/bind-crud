@@ -40,18 +40,13 @@ for (var i in METHODS) {
                     return callback (err);
                 }
 
-                // handle no data
-                if (!data) {
-                    return callback ("No data");
-                }
-
                 // handle array
-                if (data.constructor.name === "Array") {
+                if (data && data.constructor.name === "Array") {
                     return callback (null, data, count);
                 }
 
                 // handle cursor
-                if (typeof data.toArray === "function") {
+                if (data && typeof data.toArray === "function") {
                     return data.toArray (function (err, docs) {
                         callback (err, docs, count);
                     });
