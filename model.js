@@ -2,6 +2,13 @@ var io = require('./io');
 var templates = require('./templates');
 var ObjectId = require('modm').ObjectId;
 
+var moment;
+try {
+    moment = require('moment');
+} catch (err) {
+    console.error('The moment NPM module not found in your mono installation. Crud operations involving date might not operate correctly.')
+}
+
 function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
 
     if (typeof obj === 'undefined') {
@@ -24,7 +31,11 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
                         obj[i] = ObjectId(obj[i]);
                         break;
                     case 'date':
-                        obj[i] = new Date(obj[i]);
+                        if (moment) {
+                            obj[i] = moment(obj[i], paths[keyPath].parse || undefined).toDate();
+                        } else {
+                            obj[i] = new Date(obj[i]);
+                        }
                         break;
                 }
             }
@@ -49,7 +60,11 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
             } else if (parentSaysId) {
                 obj[key] = ObjectId(obj[key]);
             } else if (typeof obj[key] === 'string' && paths[newKeyPath] && paths[newKeyPath].type === 'date') {
-                obj[key] = new Date(obj[key]);
+                if (moment) {
+                    obj[key] = moment(obj[key], paths[newKeyPath].parse || undefined).toDate();
+                } else {
+                    obj[key] = new Date(obj[key]);
+                }
             }
         }
     }
