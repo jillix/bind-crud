@@ -33,7 +33,15 @@ for (var i in METHODS) {
                     }
                 };
             }
-            model(request, callback);
+            model(request, function(err, data, count) {
+                if (request.noCursor && data && typeof data.toArray === 'function') {
+                    data.toArray(function(err, data) {
+                        callback(err, data, count);
+                    });
+                    return;
+                }
+                callback(err, data, count);
+            });
         });
     })(METHODS[i]);
 }

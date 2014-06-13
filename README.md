@@ -37,7 +37,9 @@ Templates are always initialized before returned.
     // don't make joins
     noJoins: true,
     // don't merge template
-    noMerge: true
+    noMerge: true,
+    // don't return cursors for read operations
+    noCursor: true
 }
 ```
 
@@ -117,6 +119,7 @@ myTemplate = {
 - add fixes and new featured here
 
 #### `v0.3.0 betas`
+- added the `noCursor` crud read request option to automatically convert all the cursors into array. Default `false`
 - fixed the linked field filtering
 - sort linked fields using JavaScript sort methods after we have the full result array
 - added `noJoins: true` template option to disable linked template joining
