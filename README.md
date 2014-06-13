@@ -24,6 +24,14 @@ If an array is send to `self.emit('read')` as data CRUD will fetch the templates
 Normal queries for templates are working also.
 Templates are always initialized before returned.
 
+### CRUD object format
+
+- `t` (client) or `templateId` (server): the stringified ObjectID id od this template
+- `q` (client) or `query` (server): a query object in MongoDB query format used for `read`, `update`, `delete` operations
+- `d` (client) or `data` (server): a data object for `update` or `create` operations. The `update` operation requires the MongoDB update document format, while for the `create` operations this will be interpreted as the document to be created.
+- `o` (client) or `options` (server): an options object in the MongoDB NodeJs Driver format that can contain: `fields`, `sort`, `skip`, `limit`, etc. options
+- `role` (server): the role in the name of which this request should be made. This usually comes from `link.session.crudRole`. From the client this fiels is not necessary because it will be automatically added on the server side depending on the role of the user making this request.
+
 ### Client CRUD requests
 
 #### Example request data:
@@ -31,7 +39,7 @@ Templates are always initialized before returned.
 ```js
 {
     // the template that this CRUD object will be validated against
-    t: 'templateType',
+    t: 'the stringified template id',
     // the query object in MongoDB format
     q: {/*query object*/},
     // the document object (updates) in MongoDB format
@@ -55,8 +63,8 @@ Build the CRUD request object:
 
 ```js
 {
-    templateId: "the stringified template id",
-    role: ObjectId("the crud role"), // link.session.crudRole
+    templateId: 'the stringified template id',
+    role: ObjectId('the crud role'), // link.session.crudRole
     query: {
         /* query data */
     },
