@@ -33,28 +33,7 @@ for (var i in METHODS) {
                     }
                 };
             }
-            model(request, function (err, data, count) {
-
-                // handle error
-                if (err) {
-                    return callback (err);
-                }
-
-                // handle array
-                if (data && data.constructor.name === "Array") {
-                    return callback (null, data, count);
-                }
-
-                // handle cursor
-                if (data && typeof data.toArray === "function") {
-                    return data.toArray (function (err, docs) {
-                        callback (err, docs, count);
-                    });
-                }
-
-                // for non read operations
-                callback (err, data, count);
-            });
+            model(request, callback);
         });
     })(METHODS[i]);
 }
