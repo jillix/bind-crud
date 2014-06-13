@@ -122,7 +122,6 @@ myTemplate = {
 - added `noJoins: true` template option to disable linked template joining
 - get template requests filter out all roles except the user role
 - callback the data after running non-read operations and server events
-- convert cursor to array when using server events
 - emit `request.template.callback` event if this is provided (also, don't call the built-in callback)
 
 #### `v0.2.14`
