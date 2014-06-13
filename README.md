@@ -19,11 +19,15 @@ All these events must have two parameters:
  * the **callback** to be called with the results when the operation completes.
 
 ####Fetch templates
+
 If an array is send to `self.emit('read')` as data CRUD will fetch the templates inside the array.
 Normal queries for templates are working also.
 Templates are always initialized before returned.
 
-####Example request data:
+### Client CRUD requests
+
+#### Example request data:
+
 ```js
 {
     // the template that this CRUD object will be validated against
@@ -43,7 +47,34 @@ Templates are always initialized before returned.
 }
 ```
 
-####Template config
+### Server CRUD requests
+
+#### Example request data:
+
+Build the CRUD request object:
+
+```js
+{
+    templateId: "the stringified template id",
+    role: ObjectId("the crud role"), // link.session.crudRole
+    query: {
+        /* query data */
+    },
+    data: {
+        /* data to insert/update */
+    },
+    noCursor: true // don't return cursors for read operations
+}
+```
+
+and emit a `crud.<operation>` server-side event:
+
+```js
+M.emit("crud.create", crudObject, callback);
+```
+
+#### Template config
+
 ```js
 myTemplate = {
     _id: myTemplateItemId,
