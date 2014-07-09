@@ -165,6 +165,7 @@ myTemplate = {
 - get template requests filter out all roles except the user role
 - callback the data after running non-read operations and server events
 - emit `request.template.callback` event if this is provided (also, don't call the built-in callback)
+- dates are converted using [moment.js](http://momentjs.com/) if this is installed. Dates in valid ISO date format (`YYYY-MM-DDThh:mm:ss.MMM`) will be parsed with the `Date` constructor.
 
 #### `v0.2.14`
 - Fixed wrong behavior when sorting numbers and strings. Related to #29.

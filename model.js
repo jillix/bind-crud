@@ -31,10 +31,10 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
                         obj[i] = ObjectId(obj[i]);
                         break;
                     case 'date':
-                        if (moment) {
-                            obj[i] = moment(obj[i], paths[keyPath].parse || undefined).toDate();
-                        } else {
+                        if (obj[i].match(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{0,3})?)?(Z(\d)*)$/) || !moment) {
                             obj[i] = new Date(obj[i]);
+                        } else {
+                            obj[i] = moment(obj[i], paths[keyPath].parse || undefined).toDate();
                         }
                         break;
                 }
@@ -60,10 +60,10 @@ function recursiveConvert(paths, obj, keyPath, convertAllStrings) {
             } else if (parentSaysId) {
                 obj[key] = ObjectId(obj[key]);
             } else if (typeof obj[key] === 'string' && paths[newKeyPath] && paths[newKeyPath].type === 'date') {
-                if (moment) {
-                    obj[key] = moment(obj[key], paths[newKeyPath].parse || undefined).toDate();
-                } else {
+                if (obj[key].match(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{0,3})?)?(Z(\d)*)$/) || !moment) {
                     obj[key] = new Date(obj[key]);
+                } else {
+                    obj[key] = moment(obj[key], paths[newKeyPath].parse || undefined).toDate();
                 }
             }
         }
