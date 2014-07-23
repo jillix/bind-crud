@@ -236,25 +236,53 @@ function doDbRequest (request, callback) {
         request.data._tp = copy;
     }
 
-    // do input/output
-    io[request.method](request, function (err, data, readCount) {
+    function runRequest(request) {
+        // do input/output
+        io[request.method](request, function (err, data, readCount) {
 
-        if (typeof request.template.callback === 'string') {
-            M.emit('crud:' + request.template.callback, request, err, data, readCount, callback);
-        } else {
-            callback (err, data, readCount);
-        }
-
-        // emit a server event
-        if (request.template.on && request.template.on[request.method]) {
-            for (var event in request.template.on[request.method]) {
-                var args = request.template.on[request.method][event].slice();
-                args.splice(0, 0, event, request);
-                request.result = data;
-                M.emit.apply(M, args);
+            // After {event}.
+            // e.g.: after: {
+            //  create: "someEvent",
+            //  read: "anotherEvent"
+            // }
+            //
+            // after: "catchAll"
+            var typeOfAfter = typeof request.template.after;
+            if (typeOfAfter === "string") {
+                M.emit('crud:' + request.template.after, request, err, data, readCount, callback);
+            } else if (typeOfAfter === "object" && typeof request.template.after[request.method] === "string") {
+                M.emit('crud:' + request.template.after[request.method], request, err, data, readCount, callback);
+            } else {
+                callback(err, data, readCount);
             }
-        }
-    });
+
+            // emit a server event
+            if (request.template.on && request.template.on[request.method]) {
+                for (var event in request.template.on[request.method]) {
+                    var args = request.template.on[request.method][event].slice();
+                    args.splice(0, 0, event, request);
+                    request.result = data;
+                    M.emit.apply(M, args);
+                }
+            }
+        });
+    }
+
+    // Before {event}.
+    // e.g.: before: {
+    //  create: "someEvent",
+    //  read: "anotherEvent"
+    // }
+    //
+    // before: "catchAll"
+    var typeOfBefore = typeof request.template.before;
+    if (typeOfBefore === "string") {
+        M.emit('crud:' + request.template.before, request, runRequest);
+    } else if (typeOfBefore === "object" && typeof request.template.before[request.method] === "string") {
+        M.emit('crud:' + request.template.before[request.method], request, runRequest);
+    } else {
+        runRequest(request);
+    }
 }
 
 function createError(code, message) {
