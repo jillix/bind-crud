@@ -236,7 +236,12 @@ function doDbRequest (request, callback) {
         request.data._tp = copy;
     }
 
-    function runRequest(request) {
+    function runRequest(err, request) {
+
+        if (err) {
+            return callback(err);
+        }
+
         // do input/output
         io[request.method](request, function (err, data, readCount) {
 
