@@ -286,7 +286,7 @@ function doDbRequest (request, callback) {
     } else if (typeOfBefore === "object" && typeof request.template.before[request.method] === "string") {
         M.emit('crud:' + request.template.before[request.method], request, runRequest);
     } else {
-        runRequest(request);
+        runRequest(null, request);
     }
 }
 
