@@ -100,7 +100,6 @@ function createResponseHandler (method, link) {
 
         link.res.headers['content-type'] = 'application/json; charset=utf-8';
 
-
         // TODO How can this be fixed using a better way?
         var constructorNameOfResults = results.constructor.name;
         if (results && constructorNameOfResults === "Object" && typeof results.toArray === "function") {
@@ -112,10 +111,12 @@ function createResponseHandler (method, link) {
             link.res.headers['X-Mono-CRUD-Count'] = (readCount || 0).toString();
         }
 
+
         if (method === 'read' && constructorNameOfResults === 'Cursor') {
 
             // stream result
             var stream = results.stream();
+
             link.stream.start(200);
 
             stream.on('end', function() {
