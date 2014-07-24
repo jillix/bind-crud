@@ -247,16 +247,19 @@ function doDbRequest (request, callback) {
 
             // After {event}.
             // e.g.: after: {
-            //  create: "someEvent",
-            //  read: "anotherEvent"
+            //  app: {
+            //    create: "someEvent",
+            //    read: "anotherEvent"
+            //  }
             // }
             //
-            // after: "catchAll"
-            var typeOfAfter = typeof request.template.after;
+            // after: { appId: "catchAll" }
+            request.template.after = Object(request.template.after);
+            var typeOfAfter = typeof request.template.after[M.config.app.id];
             if (typeOfAfter === "string") {
-                M.emit('crud:' + request.template.after, request, err, data, readCount, callback);
-            } else if (typeOfAfter === "object" && typeof request.template.after[request.method] === "string") {
-                M.emit('crud:' + request.template.after[request.method], request, err, data, readCount, callback);
+                M.emit('crud:' + request.template.after[M.config.app.id], request, err, data, readCount, callback);
+            } else if (typeOfAfter === "object" && typeof request.template.after[M.config.app.id][request.method] === "string") {
+                M.emit('crud:' +  request.template.after[M.config.app.id][request.method], request, err, data, readCount, callback);
             } else {
                 callback(err, data, readCount);
             }
@@ -275,16 +278,19 @@ function doDbRequest (request, callback) {
 
     // Before {event}.
     // e.g.: before: {
-    //  create: "someEvent",
-    //  read: "anotherEvent"
+    //   appId: {
+    //    create: "someEvent",
+    //    read: "anotherEvent"
+    //   }
     // }
     //
-    // before: "catchAll"
-    var typeOfBefore = typeof request.template.before;
+    // before: { appId: "catchAll" }
+    request.template.before = Object(request.template.before);
+    var typeOfBefore = typeof request.template.before[M.config.app.id];
     if (typeOfBefore === "string") {
-        M.emit('crud:' + request.template.before, request, runRequest);
-    } else if (typeOfBefore === "object" && typeof request.template.before[request.method] === "string") {
-        M.emit('crud:' + request.template.before[request.method], request, runRequest);
+        M.emit('crud:' + request.template.before[M.config.app.id], request, runRequest);
+    } else if (typeOfBefore === "object" && typeof request.template.before[M.config.app.id][request.method] === "string") {
+        M.emit('crud:' +  request.template.before[M.config.app.id][request.method], request, runRequest);
     } else {
         runRequest(null, request);
     }
