@@ -157,7 +157,7 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
-#### `v0.3.0 betas`
+#### `v0.3.0`
 - added the `noCursor` crud read request option to automatically convert all the cursors into array. Default `false`
 - fixed the linked field filtering
 - sort linked fields using JavaScript sort methods after we have the full result array
@@ -166,6 +166,58 @@ myTemplate = {
 - callback the data after running non-read operations and server events
 - emit `request.template.callback` event if this is provided (also, don't call the built-in callback)
 - dates are converted using [moment.js](http://momentjs.com/) if this is installed. Dates in valid ISO date format (`YYYY-MM-DDThh:mm:ss.MMM`) will be parsed with the `Date` constructor.
+- Introduced `before` and `after` configuration:
+
+    ```js
+    {
+        before: {
+            appId: {
+                create: "createEventB",
+                read: "readEventB",
+                update: "updateEventB",
+                delete: "deleteEventB"
+            }
+        },
+        after: {
+            appId: {
+                create: "createEventA",
+                read: "readEventA",
+                update: "updateEventA",
+                delete: "deleteEventA"
+            }
+        }
+    }
+    ```
+    
+    or
+    
+    ```js
+    {
+        before: { appId: "catchAllB" },
+        after: { appId: "catchAllA" }
+    }
+    ```
+    
+    In server custom scripts we can do:
+    
+    ```js
+    // before event
+    M.on("crud:createEventB", function (request, callback) {
+      // do another db request
+      foo(request, function (err, data) {
+        if (err) { return callback(err); }
+        request.query.something = data.something;
+        callback(null, request);
+      });
+    });
+    
+    // after event
+    M.on("crud:createEventA", function (request, err, data, readCount, callback) {
+      // handle error message
+      // then send the callback
+      callback(err, data, readCount);
+    });
+    ```
 
 #### `v0.2.14`
 - Fixed wrong behavior when sorting numbers and strings. Related to #29.
