@@ -1,4 +1,5 @@
 var model = require('./model');
+var ObjectId = require("mongodb").ObjectId;
 
 var METHODS = [
     'create',
@@ -56,8 +57,14 @@ function createRequest (method, link) {
         return null;
     }
 
+    // Get role or set the public role
+    var role = link.session.crudRole;
+    if (link.session._rid === M.config.app.publicRole && !link.session._uid) {
+        role = ObjectId("000000000000000000000001");
+    }
+
     var request = {
-        role: link.session.crudRole,
+        role: role,
         options: {},
         templateId: data.t,
         method: method,
