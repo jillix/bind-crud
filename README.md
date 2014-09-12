@@ -157,6 +157,9 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+#### `v0.3.1`
+ - Added public access feature
+
 #### `v0.3.0`
 - added the `noCursor` crud read request option to automatically convert all the cursors into array. Default `false`
 - fixed the linked field filtering
