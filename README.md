@@ -157,6 +157,8 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+#### `v0.3.2`
+ - Fixed a bug from v0.3.1 (undefined is not a function)
 #### `v0.3.1`
  - Added public access feature
 
