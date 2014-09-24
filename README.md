@@ -157,8 +157,12 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+#### `v0.3.3`
+ - Cache `modm` instances. Solves a critical memory leak.
+
 #### `v0.3.2`
  - Fixed a bug from v0.3.1 (undefined is not a function)
+
 #### `v0.3.1`
  - Added public access feature
 
@@ -193,18 +197,18 @@ myTemplate = {
         }
     }
     ```
-    
+
     or
-    
+
     ```js
     {
         before: { appId: "catchAllB" },
         after: { appId: "catchAllA" }
     }
     ```
-    
+
     In server custom scripts we can do:
-    
+
     ```js
     // before event
     M.on("crud:createEventB", function (request, callback) {
@@ -215,7 +219,7 @@ myTemplate = {
         callback(null, request);
       });
     });
-    
+
     // after event
     M.on("crud:createEventA", function (request, err, data, readCount, callback) {
       // handle error message
