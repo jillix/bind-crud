@@ -26,6 +26,8 @@ var ROLE_CONFIGURABLE_FIELDS = {
     schema: 1
 };
 
+var _modmCache = {};
+
 
 // TODO let the user define this configs
 var config = {
@@ -61,7 +63,7 @@ var templateCache = {};
 templateCache[CORE_TEMPLATE_IDS.templates] = {
     _id: modm.ObjectId(CORE_TEMPLATE_IDS.templates),
     _modm: {
-        db: modm(config.dbName, {
+        db: _modmCache[config.dbName] = modm(config.dbName, {
             server: {poolSize: 3},
             db: {w: 1}
         })
@@ -236,11 +238,12 @@ function initAndCache (template) {
     }
 
     // save modm instance on template
-    template._modm = {
-        model: modm(template.db, {
+    template._modm =  {
+        model: _modmCache[template.db] || (_modmCache[template.db] =
+            modm(template.db, {
             server: {poolSize: 3},
             db: {w: 1}
-        })
+        }))
     };
 
     // add mandatory field _tp
