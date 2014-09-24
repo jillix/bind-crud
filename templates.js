@@ -238,11 +238,12 @@ function initAndCache (template) {
     }
 
     // save modm instance on template
-    template._modm = _modmCache[template.db] || _modmCache[template.db] = {
-        model: modm(template.db, {
+    template._modm =  {
+        model: _modmCache[template.db] || (_modmCache[template.db] =
+            modm(template.db, {
             server: {poolSize: 3},
             db: {w: 1}
-        })
+        }))
     };
 
     // add mandatory field _tp
