@@ -349,8 +349,9 @@ exports.update = function (dbReq, callback) {
 };
 
 exports['delete'] = function (dbReq, callback) {
+
     if (dbReq.template.findAndRemove || dbReq.findAndRemove) {
-        dbReq.template._modm.collection.findAndRemove(dbReq.query, dbReq.options, callback);
+        dbReq.template._modm.collection.findAndRemove(dbReq.query, [], dbReq.options, callback);
     } else {
         dbReq.template._modm.collection.remove(dbReq.query, dbReq.options, callback);
     }
