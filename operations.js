@@ -47,6 +47,9 @@ for (var i in METHODS) {
     })(METHODS[i]);
 }
 
+// init operation
+exports.init = function (link) { link.send(200); }
+
 // private functions
 function createRequest (method, link) {
 
