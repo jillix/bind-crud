@@ -152,10 +152,19 @@ myTemplate = {
 }
 ```
 
-### Changelog
+### Change log
 
 #### `dev`
 - add fixes and new featured here
+
+#### `v0.3.6`
+ - Fixed `read`, `update` and `delete` operations with empty query string that were not adding the `_tp` to the query before executing it.
+
+#### `v0.3.5`
+ - Added `init` operation to expose the server side initialization if no other crud operations are needed.
+
+#### `v0.3.4`
+ - Added missing sort argument to `findAndRemove` db request.
 
 #### `v0.3.3`
  - Cache `modm` instances. Solves a critical memory leak.
