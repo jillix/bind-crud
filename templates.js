@@ -361,7 +361,9 @@ function fetchTemplates (request, callback) {
 
         // convert the string IDs into ObjectId's
         for (var i = 0; i < oldCached.query.length; ++i) {
-            oldCached.query[i] = modm.ObjectId(oldCached.query[i]);
+            if (typeof oldCached.query[i] === 'string') {
+                oldCached.query[i] = modm.ObjectId(oldCached.query[i]);
+            }
         }
 
         dbReq.query._id = { $in: oldCached.query };

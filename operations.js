@@ -1,5 +1,5 @@
 var model = require('./model');
-var ObjectId = require("mongodb").ObjectID;
+var ObjectId = require('mongodb').ObjectID;
 
 var METHODS = [
     'create',
@@ -21,6 +21,7 @@ for (var i in METHODS) {
 
             request.method = method;
             request.options = request.options || {};
+            request.templateId = typeof request.templateId === 'string' ? ObjectId(request.templateId) : request.templateId;
 
             if (!callback) {
                 callback = function(err) {
@@ -63,13 +64,13 @@ function createRequest (method, link) {
     // Get role or set the public role
     var role = link.session.crudRole;
     if (link.session._rid === M.config.app.publicRole && !link.session._uid) {
-        link.session.crudRole = role = ObjectId("000000000000000000000001");
+        link.session.crudRole = role = ObjectId('000000000000000000000001');
     }
 
     var request = {
         role: role,
         options: {},
-        templateId: data.t,
+        templateId: typeof data.t === 'string' ? ObjectId(data.t) : data.t,
         method: method,
         session: link.session,
         // TODO remove this when updates on linked fields are possible
@@ -112,12 +113,12 @@ function createResponseHandler (method, link) {
 
         // TODO How can this be fixed using a better way?
         var constructorNameOfResults = results.constructor.name;
-        if (results && constructorNameOfResults === "Object" && typeof results.toArray === "function") {
-            constructorNameOfResults = "Cursor";
+        if (results && constructorNameOfResults === 'Object' && typeof results.toArray === 'function') {
+            constructorNameOfResults = 'Cursor';
         }
 
          // if we have an array or a cursor, set X-Mono-CRUD-Count response header
-        if (["Cursor", "Array"].indexOf(constructorNameOfResults) !== -1) {
+        if (['Cursor', 'Array'].indexOf(constructorNameOfResults) !== -1) {
             link.res.headers['X-Mono-CRUD-Count'] = (readCount || 0).toString();
         }
 
