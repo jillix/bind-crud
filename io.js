@@ -305,6 +305,10 @@ exports.create = function (dbReq, callback) {
 };
 
 exports.read = function (dbReq, callback) {
+    // add the template ID to this query but not for template requests
+    if (!dbReq.query._tp) {
+        dbReq.query._tp = dbReq.templateId;
+    }
 
     // delete limit
     if (dbReq.joints) {
@@ -345,10 +349,20 @@ exports.read = function (dbReq, callback) {
 };
 
 exports.update = function (dbReq, callback) {
+    // add the template ID to this query but not for template requests
+    if (!dbReq.query._tp) {
+        dbReq.query._tp = dbReq.templateId;
+    }
+
     dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, callback);
 };
 
 exports['delete'] = function (dbReq, callback) {
+    // add the template ID to this query but not for template requests
+    if (!dbReq.query._tp) {
+        dbReq.query._tp = dbReq.templateId;
+    }
+
     if (dbReq.template.findAndRemove || dbReq.findAndRemove) {
         dbReq.template._modm.collection.findAndRemove(dbReq.query, [], dbReq.options, callback);
     } else {
