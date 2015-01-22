@@ -157,6 +157,9 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+#### `v0.3.7`
+ - Fixed `templateId` handling to a uniform behavior: always `ObjectID`
+
 #### `v0.3.6`
  - Fixed `read`, `update` and `delete` operations with empty query string that were not adding the `_tp` to the query before executing it.
 
