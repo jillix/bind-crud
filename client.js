@@ -122,16 +122,16 @@ function templateHandler (templates, callback, ignoreLinks) {
 
             // save template in cache
             templateCache[_id] = templates[i];
+        }
 
-            if (!ignoreLinks) {
-                templates[i].linked = {};
-                for (var field in templates[i].schema) {
+        if (!ignoreLinks) {
+            templates[i].linked = {};
+            for (var field in templates[i].schema) {
 
-                    // collect linked templates
-                    if (templates[i].schema[field].link) {
-                        templates[i].linked[field] = templates[i].schema[field];
-                        linkedTemplates.push(templates[i].schema[field].link);
-                    }
+                // collect linked templates
+                if (templates[i].schema[field].link) {
+                    templates[i].linked[field] = templates[i].schema[field];
+                    linkedTemplates.push(templates[i].schema[field].link);
                 }
             }
         }
@@ -272,4 +272,3 @@ exports.handler = handler;
 exports.fetchTemplates = fetchTemplates;
 exports.setTemplate = setTemplate;
 exports.templateId = templateId;
-
