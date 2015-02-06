@@ -157,6 +157,9 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+### `v0.3.8`
+ - Fixed template merging for templates that are not fetched by id
+
 #### `v0.3.7`
  - Fixed `templateId` handling to a uniform behavior: always `ObjectID`
 
