@@ -35,14 +35,14 @@ for (var i in METHODS) {
                     }
                 };
             }
-            model(request, function(err, data, count) {
+            model(request, function(err, data) {
                 if (request.noCursor && data && typeof data.toArray === 'function') {
                     data.toArray(function(err, data) {
-                        callback(err, data, count);
+                        callback(err, data);
                     });
                     return;
                 }
-                callback(err, data, count);
+                callback(err, data);
             });
         });
     })(METHODS[i]);
@@ -104,7 +104,7 @@ function createRequest (method, link) {
 }
 
 function createResponseHandler (method, link) {
-    return function(err, results, readCount) {
+    return function(err, results) {
 
         if (err) {
             return link.send(err.statusCode || 500, err.message || err.toString() || err);

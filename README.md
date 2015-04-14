@@ -51,7 +51,9 @@ Templates are always initialized before returned.
     // don't merge template
     noMerge: true,
     // don't return cursors for read operations
-    noCursor: true
+    noCursor: true,
+    // perform only a count using the given query
+    onlyCount: true
 }
 ```
 
@@ -71,7 +73,8 @@ Build the CRUD request object:
     data: {
         /* data to insert/update */
     },
-    noCursor: true // don't return cursors for read operations
+    noCursor: true // don't return cursors for read operations,
+    onlyCount: true // perform only a count using the given query
 }
 ```
 
@@ -157,6 +160,10 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+### `v0.4.0`
+ - Added `onlyCount` option to find requests
+ - Count is no longer performed for every find request
+
 ### `v0.3.8`
  - Fixed template merging for templates that are not fetched by id
 
@@ -236,10 +243,10 @@ myTemplate = {
     });
 
     // after event
-    M.on("crud:createEventA", function (request, err, data, readCount, callback) {
+    M.on("crud:createEventA", function (request, err, data, callback) {
       // handle error message
       // then send the callback
-      callback(err, data, readCount);
+      callback(err, data);
     });
     ```
 
