@@ -74,7 +74,8 @@ function createRequest (method, link) {
         method: method,
         session: link.session,
         // TODO remove this when updates on linked fields are possible
-        noJoins: data.noJoins
+        noJoins: data.noJoins,
+        onlyCount: data.onlyCount
     };
 
     // query
@@ -116,12 +117,6 @@ function createResponseHandler (method, link) {
         if (results && constructorNameOfResults === 'Object' && typeof results.toArray === 'function') {
             constructorNameOfResults = 'Cursor';
         }
-
-         // if we have an array or a cursor, set X-Mono-CRUD-Count response header
-        if (['Cursor', 'Array'].indexOf(constructorNameOfResults) !== -1) {
-            link.res.headers['X-Mono-CRUD-Count'] = (readCount || 0).toString();
-        }
-
 
         if (method === 'read' && constructorNameOfResults === 'Cursor') {
 

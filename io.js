@@ -155,9 +155,6 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
         });
     }
 
-    // get the count
-    var count = items.length;
-
     // set limit value if it's undefined
     if (typeof limit === "undefined") {
         limit = items.length;
@@ -167,7 +164,7 @@ function sendJointResult (result, jointMerges, sort, skip, limit, callback) {
     items = items.slice(skip, skip + limit);
 
     // callback
-    callback(null, items, count);
+    callback(null, items);
 }
 
 function jointRequest (dbReq, jointDbReq, result, callback) {
@@ -323,29 +320,33 @@ exports.read = function (dbReq, callback) {
         delete dbReq.options.skip;
     }
 
-    // get data and count
-    dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
+    // determine if count or find request
+    if (dbReq.onlyCount) {
+        dbReq.template._modm.collection.count(dbReq.query, function (err, count) {
 
-        if (err) {
-            return callback(err);
-        }
-
-        dbReq.template._modm.collection.count(dbReq.query, function (countErr, count) {
-
-            if (countErr) {
+            if (err) {
                 count = -1;
+            }
+
+            callback(null, count);
+        });
+    } else {
+        dbReq.template._modm.collection.find(dbReq.query, dbReq.options, function (err, cursor) {
+
+            if (err) {
+                return callback(err);
             }
 
             // merge linked data in result data
             if (dbReq.joints) {
-                return jointResponse(dbReq, cursor, skip, limit, function (err, result, count) {
-                    callback(err, result, count);
+                return jointResponse(dbReq, cursor, skip, limit, function (err, result) {
+                    callback(err, result);
                 });
             }
 
-            callback(null, cursor, count);
+            callback(null, cursor);
         });
-    });
+    }
 };
 
 exports.update = function (dbReq, callback) {

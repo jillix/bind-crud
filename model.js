@@ -243,7 +243,7 @@ function doDbRequest (request, callback) {
         }
 
         // do input/output
-        io[request.method](request, function (err, data, readCount) {
+        io[request.method](request, function (err, data) {
 
             // After {event}.
             // e.g.: after: {
@@ -257,11 +257,11 @@ function doDbRequest (request, callback) {
             request.template.after = Object(request.template.after);
             var typeOfAfter = typeof request.template.after[M.config.app.id];
             if (typeOfAfter === "string") {
-                M.emit('crud:' + request.template.after[M.config.app.id], request, err, data, readCount, callback);
+                M.emit('crud:' + request.template.after[M.config.app.id], request, err, data, callback);
             } else if (typeOfAfter === "object" && typeof request.template.after[M.config.app.id][request.method] === "string") {
-                M.emit('crud:' +  request.template.after[M.config.app.id][request.method], request, err, data, readCount, callback);
+                M.emit('crud:' +  request.template.after[M.config.app.id][request.method], request, err, data, callback);
             } else {
-                callback(err, data, readCount);
+                callback(err, data);
             }
 
             // emit a server event
