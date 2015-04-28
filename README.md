@@ -160,6 +160,9 @@ myTemplate = {
 #### `dev`
 - add fixes and new featured here
 
+### `v0.4.1`
+ - Template role handling: always return at least current role in a template document.
+
 ### `v0.4.0`
  - Added `onlyCount` option to find requests
  - Count is no longer performed for every find request
