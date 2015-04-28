@@ -15,7 +15,6 @@ var PRIVATE_FIELDS = {
     _li: 1,
     db: 1,
     collection: 1,
-    roles: 1,
     itemAccess: 1,
     linkedFields: 1
 };
@@ -180,6 +179,11 @@ function getTemplates (request, callback) {
                     // clone for template parts that will be modified
                     if (['roles'].indexOf(field) !== -1) {
                         result[i][field] = JSON.parse(JSON.stringify(templates[i][field]));
+                        for (var roleId in result[i][field]) {
+                            if (roleId != request.role) {
+                                delete result[i][field][roleId];
+                            }
+                        }
                     }
                     else {
                         result[i][field] = templates[i][field];
@@ -295,6 +299,7 @@ function getCachedTemplates (templates, role, method) {
     for (var i in templates) {
         // check if template is in cache
         if (templateCache[templates[i]]) {
+
             // check role access
             if (checkAccess(templateCache[templates[i]], role, method)) {
                 // if this role has a special template configuration
