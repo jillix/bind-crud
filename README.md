@@ -157,17 +157,18 @@ myTemplate = {
 
 ### Change log
 
-#### `dev`
-- add fixes and new featured here
+#### `v0.5.0`
+ - transferred the module to the new jxMono organization
+ - updated Flow to `v0.2.0`
 
-### `v0.4.1`
+#### `v0.4.1`
  - Template role handling: always return at least current role in a template document.
 
-### `v0.4.0`
+#### `v0.4.0`
  - Added `onlyCount` option to find requests
  - Count is no longer performed for every find request
 
-### `v0.3.8`
+#### `v0.3.8`
  - Fixed template merging for templates that are not fetched by id
 
 #### `v0.3.7`
