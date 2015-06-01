@@ -1,11 +1,11 @@
 {
     "source": "github",
-    "owner": "jillix",
+    "owner": "jxmono",
     "name": "crud",
     "dependencies": [
         "/crud.js",
         "/client.js",
-        "github/adioo/flow/v0.1.0"
+        "github/jxmono/flow/v0.2.0"
     ],
     "operations": [
         { "file": "operations.js", "function": "create" },
