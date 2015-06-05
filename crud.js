@@ -1,4 +1,4 @@
-var Flow = require('github/adioo/flow');
+var Flow = require('github/jxmono/flow');
 var client = require('./client');
 
 var methods = {
