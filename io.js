@@ -354,8 +354,12 @@ exports.update = function (dbReq, callback) {
     if (!dbReq.query._tp) {
         dbReq.query._tp = dbReq.templateId;
     }
-
-    dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, callback);
+    
+    if (dbReq.template.findAndModify || dbReq.findAndModify) {
+        dbReq.template._modm.collection.findAndModify(dbReq.query, [], dbReq.data, dbReq.options, callback);
+    } else {
+        dbReq.template._modm.collection.update(dbReq.query, dbReq.data, dbReq.options, callback);
+    }
 };
 
 exports['delete'] = function (dbReq, callback) {
