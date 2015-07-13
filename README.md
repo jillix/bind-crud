@@ -157,6 +157,9 @@ myTemplate = {
 
 ### Change log
 
+#### `v0.5.1`
+ - added `findAndModify` template option for the `update` operation
+
 #### `v0.5.0`
  - transferred the module to the new jxMono organization
  - updated Flow to `v0.2.0`
