@@ -302,7 +302,7 @@ function createError(code, message) {
     return error;
 }
 
-module.exports = function (request, callback) {
+function model (request, callback) {
 
     if (!request) {
         return callback(createError(400, 'Bad request'));
@@ -381,5 +381,18 @@ module.exports = function (request, callback) {
 
             doDbRequest(request, callback);
         }
+    });
+}
+
+module.exports = function (request, callback) {
+    model(request, function (err, data) {
+        if (err && err.message === "Templates not found.") {
+            var templatesNotFoundEvent = "crud:templatesNotFound";
+            if (M._events[templatesNotFoundEvent]) {
+                return M.emit(templatesNotFoundEvent, request, err, data, callback);
+            }
+        }
+
+        callback(err, data);
     });
 };
