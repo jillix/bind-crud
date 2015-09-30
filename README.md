@@ -157,12 +157,15 @@ myTemplate = {
 
 ### Change log
 
+#### `v0.5.2`
+ - Implemented a `templatesNotFound` event
+
 #### `v0.5.1`
- - added `findAndModify` template option for the `update` operation
+ - Added `findAndModify` template option for the `update` operation
 
 #### `v0.5.0`
- - transferred the module to the new jxMono organization
- - updated Flow to `v0.2.0`
+ - Transferred the module to the new jxMono organization
+ - Updated Flow to `v0.2.0`
 
 #### `v0.4.1`
  - Template role handling: always return at least current role in a template document.
