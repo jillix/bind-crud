@@ -157,6 +157,9 @@ myTemplate = {
 
 ### Change log
 
+### `v0.6.0`
+ - Configurable core template initialization. A `init` operation must be configured in the crud application.json miid before the module can be used. The operation params must contain a `templateConfig` object with a `db` property (the db name where the templates are located)
+
 #### `v0.5.2`
  - Implemented a `templatesNotFound` event
 
