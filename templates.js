@@ -27,63 +27,80 @@ var ROLE_CONFIGURABLE_FIELDS = {
 
 var _modmCache = {};
 
-
-// TODO let the user define this configs
-var config = {
-    dbName: 'dms', // TODO handle with datasources
-    roleTemplateId: modm.ObjectId('000000000000000000000002'),
-    templateColName: 'd_templates', // TODO handle with datasources
-    templateSchema: {
-        _id: {type: 'objectid'},
-        _tp: {type: 'objectid', required: true},
-        _li: [{type: 'objectid'}],
-        db: {type: 'string', required: true},
-        collection: {type: 'string', required: true},
-        roles: {type: 'object', required: true},
-        itemAccess: {type: 'string'},
-        name: {type: 'string', required: true},
-        schema: {type: 'object', required: true},
-        links: {type: 'array'},
-        options: {type: 'object'}
-    }
-};
-
 // ******************************
 // Templates
 // ******************************
 
-var templateSchema = new modm.Schema(config.templateSchema);
-
 // template cache
 var templateCache = {};
 
-// template's template must be in the cache, otherwise
-// it's impossible to create the first template item
-templateCache[CORE_TEMPLATE_IDS.templates] = {
-    _id: modm.ObjectId(CORE_TEMPLATE_IDS.templates),
-    _modm: {
-        db: _modmCache[config.dbName] = modm(config.dbName, {
-            server: {poolSize: 3},
-            db: {w: 1}
-        })
-    },
-    db: config.dbName,
-    collection: config.templateColName,
-    roles: {
-        '*': {
-            access: 'r'
+// init the templates config
+function init (params, callback) {
+
+    // check preconditions
+    if (!params.templateConfig) {
+        var err = new Error('Missing template configuration on init operation')
+        err.statusCode = 400;
+        return link.send(err.statusCode, err);
+    }
+
+    if (!params.templateConfig.db) {
+        var err = new Error('Database name missing from template configuration');
+        err.statusCode = 400;
+        return callback(err);
+    }
+
+    var dbName = params.templateConfig.db;
+    var templateColName = params.templateConfig.collection || 'd_templates';
+
+    var config = {
+        dbName: dbName, // TODO handle with datasources
+        roleTemplateId: modm.ObjectId('000000000000000000000002'),
+        templateColName: templateColName, // TODO handle with datasources
+        templateSchema: {
+            _id: {type: 'objectid'},
+            _tp: {type: 'objectid', required: true},
+            _li: [{type: 'objectid'}],
+            db: {type: 'string', required: true},
+            collection: {type: 'string', required: true},
+            roles: {type: 'object', required: true},
+            itemAccess: {type: 'string'},
+            name: {type: 'string', required: true},
+            schema: {type: 'object', required: true},
+            links: {type: 'array'},
+            options: {type: 'object'}
         }
-    },
-    itemAccess: 'crud',
-    label: 'Templates',
-    schema: templateSchema.paths
-};
+    };
+    var templateSchema = new modm.Schema(config.templateSchema);
 
-// TODO move all core templates to crud module.. how to add roles??
+    // template's template must be in the cache, otherwise
+    // it's impossible to create the first template item
+    templateCache[CORE_TEMPLATE_IDS.templates] = {
+        _id: modm.ObjectId(CORE_TEMPLATE_IDS.templates),
+        _modm: {
+            db: _modmCache[config.dbName] = modm(config.dbName, {
+                server: {poolSize: 3},
+                db: {w: 1}
+            })
+        },
+        db: config.dbName,
+        collection: config.templateColName,
+        roles: {
+            '*': {
+                access: 'r'
+            }
+        },
+        itemAccess: 'crud',
+        label: 'Templates',
+        schema: templateSchema.paths
+    };
 
-// init collection
-templateCache[CORE_TEMPLATE_IDS.templates]._modm.collection = templateCache[CORE_TEMPLATE_IDS.templates]._modm.db(config.templateColName, templateSchema);
+    // init collection
+    templateCache[CORE_TEMPLATE_IDS.templates]._modm.collection = templateCache[CORE_TEMPLATE_IDS.templates]._modm.db(config.templateColName, templateSchema);
 
+    // done
+    callback(null);
+}
 
 // ******************************
 // Exports
@@ -91,6 +108,7 @@ templateCache[CORE_TEMPLATE_IDS.templates]._modm.collection = templateCache[CORE
 
 M.on('crud.getTemplate', getTemplate);
 
+exports.init = init;
 exports.getTemplate = getTemplate;
 exports.getTemplates = getTemplates;
 exports.getMergeTemplates = getMergeTemplates;
@@ -118,8 +136,6 @@ function getTemplate (request, callback) {
             err.statusCode = err.statusCode || 500;
             return callback(err);
         }
-
-
 
         if (!template || !template.length) {
             err = new Error('Templates not found.');
@@ -345,6 +361,9 @@ function fetchTemplates (request, callback) {
 
     if (!request.query) {
         return callback('No templates to fetch.');
+    }
+    if (!templateCache[CORE_TEMPLATE_IDS.templates]) {
+        return callback('Core templates not initialized');
     }
 
     // build query

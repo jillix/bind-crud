@@ -1,4 +1,5 @@
 var model = require('./model');
+var templates = require('./templates');
 var ObjectId = require('mongodb').ObjectID;
 
 var METHODS = [
@@ -49,7 +50,17 @@ for (var i in METHODS) {
 }
 
 // init operation
-exports.init = function (link) { link.send(200); }
+exports.init = function (link) {
+
+    // init templates
+    templates.init(link.params, function (err) {
+        if (err) {
+            return link.send(err.statusCode, err);
+        }
+
+        return link.send(200);
+    });
+}
 
 // private functions
 function createRequest (method, link) {

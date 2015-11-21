@@ -38,12 +38,16 @@ var methods = {
 module.exports = function (eventFlow) {
     var self = this;
 
-    // automatically init operations
-    if (eventFlow.autoinit === true || eventFlow.init === true) {
-        self.link('init', function(){});
-    }
-
+    // setup flow
     Flow(self, methods, eventFlow);
 
-    self.emit('ready');
+    // init
+    self.link('init', function (err) {
+
+        if (err) {
+            return console.error(new Error(err));
+        }
+
+        self.emit('ready');
+    });
 };
